@@ -125,7 +125,7 @@ class Auth:
                 self.state = "error"
                 # Never forward Playwright exception text: it may contain callback query tokens.
                 self.message = str(exc) if isinstance(exc, ValueError) else (
-                    "登录未完成。请检查 Chrome 是否安装及学校网络是否可用，然后重试。"
+                    "登录未完成。请检查登录浏览器能否启动及学校网络是否可用，然后重试。"
                 )
 
     def logout(self):

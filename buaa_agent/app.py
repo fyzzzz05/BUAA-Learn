@@ -1,4 +1,5 @@
 import os
+import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
@@ -39,7 +40,7 @@ class TaskInput(BaseModel):
     done: bool
 
 
-def create_app(directory=None):
+def create_app(directory=None, *, desktop_token=None):
     directory = Path(directory or os.getenv("BUAA_DATA_DIR", "./data")).resolve()
     store = Store(directory)
     auth = Auth(store)
@@ -55,13 +56,16 @@ def create_app(directory=None):
         # Workers blocked on an external provider may still finish during process shutdown.
         # SQLite connections are released by process exit after daemon workers terminate.
 
-    app = FastAPI(title="BUAA Learning Agent", version="0.1.0", lifespan=lifespan,
+    app = FastAPI(title="BUAA Learning Agent", version="0.2.0", lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)
     app.state.store, app.state.auth, app.state.service, app.state.model = store, auth, service, model
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]"])
 
     @app.middleware("http")
     async def local_boundary(request: Request, call_next):
+        if desktop_token and not secrets.compare_digest(
+                request.headers.get("x-buaa-desktop", "").encode(), desktop_token.encode()):
+            return JSONResponse({"detail": "请通过 BUAA Learn 桌面应用访问"}, status_code=403)
         if request.url.path.startswith("/api/") and request.method not in ("GET", "HEAD", "OPTIONS"):
             origin = request.headers.get("origin")
             if (request.headers.get("x-buaa-local") != "1" or
@@ -77,6 +81,18 @@ def create_app(directory=None):
             "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
         )
         return response
+
+    if desktop_token:
+        @app.get("/api/desktop/health")
+        def desktop_health() -> dict:
+            return {"status": "ready", "version": "0.2.0"}
+
+        @app.post("/api/desktop/quit")
+        def desktop_quit() -> dict:
+            shutdown = getattr(app.state, "desktop_shutdown", None)
+            if shutdown:
+                shutdown()
+            return {"status": "stopping"}
 
     @app.exception_handler(PortalError)
     async def portal_error(request, exc):
@@ -279,4 +295,4 @@ def create_app(directory=None):
     return app
 
 
-app = create_app()
+app = create_app(desktop_token=os.getenv("BUAA_DESKTOP_TOKEN"))

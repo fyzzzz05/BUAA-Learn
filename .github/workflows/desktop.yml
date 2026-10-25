@@ -1,0 +1,71 @@
+name: Desktop installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: mac
+            arch: arm64
+          - os: macos-15-intel
+            platform: mac
+            arch: x64
+          - os: windows-latest
+            platform: win
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: "0"
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install Python dependencies
+        run: python -m pip install -e ".[dev]" pyinstaller==6.22.3
+      - name: Test backend
+        run: python -m pytest -q
+      - name: Build frozen backend and browser
+        run: python scripts/build_desktop_backend.py
+      - name: Test frozen service and bundled browser
+        run: python scripts/smoke_desktop_backend.py
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci --no-audit --no-fund
+      - name: Test desktop navigation boundaries
+        working-directory: desktop
+        run: npm test
+      - name: Package desktop application
+        working-directory: desktop
+        run: npm run pack
+      - name: Test packaged desktop application
+        run: python scripts/smoke_desktop_app.py
+      - name: Build installer
+        working-directory: desktop
+        run: npm run dist:${{ matrix.platform }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BUAA-Learn-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/desktop/*.dmg
+            dist/desktop/*.exe
+            dist/desktop/smoke.png
+          if-no-files-found: error
+          retention-days: 14

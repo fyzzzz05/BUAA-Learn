@@ -34,7 +34,15 @@
 
 ![社会主义发展史课堂笔记与来源时间范围](docs/images/history-timeline.png)
 
-## 快速开始
+## 桌面版
+
+macOS 和 Windows 用户可从 [GitHub Releases](https://github.com/fyzzzz05/BUAA-Learn/releases) 下载桌面安装包：Apple Silicon / Intel Mac 使用对应架构的 `.dmg`，Windows x64 使用 `.exe`。安装包内置 Python 服务和登录浏览器，无需安装开发环境。
+
+首次打开后点击 **SSO 登录**；模型可在 **模型与设置** 配置，或通过菜单 **文件 → 打开配置目录** 编辑 `.env.local` 后重启。配置、课程和笔记保存在本机，安装包不包含作者的 API 密钥或课堂数据。
+
+当前为未签名测试版，尚未配置 Apple 公证或 Windows 代码签名。构建、配置、数据迁移与测试方式见 [桌面版说明](docs/desktop.md)。
+
+## 从源码运行
 
 需要 **Python 3.11+** 和 **Google Chrome**。macOS 已实测；Windows / Linux 尚未实测。前端构建产物已包含在仓库中，普通使用无需安装 Node.js。
 

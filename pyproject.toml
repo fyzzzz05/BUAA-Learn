@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "buaa-learning-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "A local-first course learning assistant for BUAA students"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.157,<0.158", "uvicorn>=0.54,<0.55", "httpx>=0.28,<0.29", "playwright==1.64.0", "Pillow>=12,<14", "reportlab>=4,<5", "python-dotenv>=1.1,<2"]
+dependencies = ["fastapi>=0.157,<0.158", "uvicorn>=0.54,<0.55", "httpx>=0.28,<0.29", "playwright==1.64.0", "Pillow>=12,<14", "reportlab>=4,<5", "python-dotenv>=1.1,<2", "tzdata>=2025.2,<2027"]
 
 [project.optional-dependencies]
 dev = ["pytest>=9,<10", "ruff>=0.17,<0.18"]
