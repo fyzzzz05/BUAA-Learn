@@ -1,5 +1,6 @@
 import io
 import re
+import sys
 import time
 
 import httpx
@@ -60,7 +61,9 @@ def test_global_deduplication_preserves_chronological_first_occurrence(tmp_path)
     pdf = output.read_bytes()
     assert pdf.startswith(b"%PDF")
     assert len(re.findall(rb"/Type /Page\b", pdf)) == 2
-    assert output.stat().st_mode & 0o777 == 0o600
+    if sys.platform != "win32":
+        # POSIX mode bits are not implemented by Windows; it uses per-user ACLs.
+        assert output.stat().st_mode & 0o777 == 0o600
     client.close()
 
 

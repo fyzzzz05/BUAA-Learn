@@ -35,6 +35,28 @@ def main():
             assert page.title() == "BUAA browser check"
             browser.close()
         print("BUAA_BROWSER_OK", flush=True)
+        # Exercise dynamic Pillow / ReportLab resources in the frozen distribution.
+        import io
+
+        import httpx
+        from PIL import Image
+
+        from buaa_agent.slide_export import export_slides
+
+        encoded = io.BytesIO()
+        Image.new("RGB", (640, 360), "white").save(encoded, "PNG")
+        material = {"slides": [
+            {"url": "https://resource.msa.buaa.edu.cn/synthetic.png", "start": start}
+            for start in (10, 20)]}
+        output = root / "synthetic.pdf"
+        with httpx.Client(transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, content=encoded.getvalue()))) as client:
+            result = export_slides(material, {"course_name": "合成课程", "title": "打包测试"},
+                                   output, client=client)
+        assert result["slide_count"] == 1 and result["duplicate_count"] == 1
+        assert output.read_bytes().startswith(b"%PDF")
+        output.unlink()
+        print("BUAA_PDF_OK", flush=True)
         return
     if len(os.environ.get("BUAA_DESKTOP_TOKEN", "")) < 32:
         raise SystemExit("Desktop launch token is required")

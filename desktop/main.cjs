@@ -104,7 +104,10 @@ function createWindow() {
 
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on('second-instance', () => { if (window) { if (window.isMinimized()) window.restore(); window.focus(); } });
+  app.on('second-instance', () => {
+    if (!window && origin && !quitting) createWindow();
+    if (window) { if (window.isMinimized()) window.restore(); window.focus(); }
+  });
   app.whenReady().then(async () => {
     fs.mkdirSync(app.getPath('userData'), { recursive: true, mode: 0o700 });
     try {
