@@ -1,0 +1,32 @@
+name: Publish desktop release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Desktop installers run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          pattern: BUAA-Learn-*
+          path: release-assets
+      - name: Verify build and publish installers with SHA256 checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_RUN_ID: ${{ inputs.run_id }}
+        run: python scripts/publish_desktop.py

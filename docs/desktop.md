@@ -25,6 +25,8 @@ npm run dist:mac
 
 产物位于 `dist/desktop/`。GitHub Actions 的 **Desktop installers** 可手动运行三平台构建，安装包和实际窗口截图附在构建结果中。发布 tag 也会触发构建。
 
+构建全部通过后，可运行 **Publish desktop release**，填写成功构建的 run ID。发布流程校验来源与构建状态，收齐三个安装包后附上 SHA-256 校验值，发布为 `desktop-v版本号` 测试版。
+
 ## 配置与数据
 
 通过菜单 **文件 → 打开配置目录** 找到 `.env.local`，填写 `BUAA_LLM_BASE_URL`、`BUAA_LLM_MODEL`、`BUAA_LLM_API_KEY` 后重启。已设置的系统环境变量优先。首次启动自动创建空模板；不会复制开发者的密钥或账户。
