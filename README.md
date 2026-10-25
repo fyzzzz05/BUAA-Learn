@@ -38,13 +38,15 @@
 
 macOS 和 Windows 用户可从 [GitHub Releases](https://github.com/fyzzzz05/BUAA-Learn/releases) 下载桌面安装包：Apple Silicon / Intel Mac 使用对应架构的 `.dmg`，Windows x64 使用 `.exe`。安装包内置 Python 服务和登录浏览器，无需安装开发环境。
 
+**0.2.0 桌面测试版下载：** [Apple Silicon Mac](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.0/BUAA-Learn-0.2.0-mac-arm64.dmg) · [Intel Mac](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.0/BUAA-Learn-0.2.0-mac-x64.dmg) · [Windows x64](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.0/BUAA-Learn-0.2.0-win-x64.exe)
+
 首次打开后点击 **SSO 登录**；模型可在 **模型与设置** 配置，或通过菜单 **文件 → 打开配置目录** 编辑 `.env.local` 后重启。配置、课程和笔记保存在本机，安装包不包含作者的 API 密钥或课堂数据。
 
 当前为未签名测试版，尚未配置 Apple 公证或 Windows 代码签名。构建、配置、数据迁移与测试方式见 [桌面版说明](docs/desktop.md)。
 
 ## 从源码运行
 
-需要 **Python 3.11+** 和 **Google Chrome**。macOS 已实测；Windows / Linux 尚未实测。前端构建产物已包含在仓库中，普通使用无需安装 Node.js。
+需要 **Python 3.11+** 和 **Google Chrome**。macOS 已完成真实课程使用；Windows 桌面版通过构建、窗口启动、内置浏览器和 PDF 导出自动测试，学校登录仍需在实际校网环境验证。Linux 尚未实测。前端构建产物已包含在仓库中，普通使用无需安装 Node.js。
 
 ```sh
 git clone https://github.com/fyzzzz05/BUAA-Learn.git
