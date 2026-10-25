@@ -1,0 +1,12 @@
+[
+  {
+    "name": "checkbox",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/checkbox.json",
+    "sha256": "e6df7b595f25a7ee97c3fb94e0ddc35998f74c98b990d3030e485905ec677178"
+  },
+  {
+    "name": "switch",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/switch.json",
+    "sha256": "1f22350ccbf358a3aa198305c41d91e146abc0a7d5b18a9a23488b8d6b264ab4"
+  }
+]

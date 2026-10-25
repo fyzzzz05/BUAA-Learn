@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f7">
+  <title>BUAA 学习助手</title>
+  <link rel="icon" type="image/svg+xml" href="/icons/book-open.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/combobox.css">
+  <link rel="stylesheet" href="/lesson-timeline.css">
+  <link rel="stylesheet" href="/navigation.css">
+  <link rel="stylesheet" href="/automations.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要内容</a>
+  <div class="shell">
+    <div id="navigation-root" class="buaa-navigation"></div>
+    <div class="workspace">
+      <header class="topbar"><div class="topbar-title"><div id="navigation-trigger" class="buaa-navigation"></div><div id="breadcrumb">开始学习</div></div><div id="connection"></div></header>
+      <div id="job-strip" aria-live="polite"></div>
+      <main id="main" tabindex="-1"><div class="empty"><h1>正在打开学习空间</h1><p>读取本地课程记录…</p></div></main>
+      <footer>BUAA Learn 为非官方学习工具。重要事项请结合课堂原话核对。</footer>
+    </div>
+  </div>
+  <dialog id="reader" aria-labelledby="reader-title"><div class="reader-header"><div><p id="reader-course" class="muted small-text"></p><h2 id="reader-title">课堂阅读</h2></div><button class="icon-button" data-action="close-reader" aria-label="关闭课堂阅读"><img src="/icons/x.svg" alt=""></button></div><div id="reader-job" aria-live="polite"></div><div id="reader-tabs" class="tabs" role="tablist" aria-label="课堂材料"></div><div id="reader-body" class="study-content" tabindex="0"></div><div class="reader-footer"><span id="reader-position">阅读位置会自动保存</span><button class="quiet small" data-action="reader-top">回到开头</button></div></dialog>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

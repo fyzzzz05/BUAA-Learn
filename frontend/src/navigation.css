@@ -1,0 +1,72 @@
+@import "tailwindcss/theme.css" layer(theme);
+@source "./features/navigation";
+@source "./shared/ui/sidebar.tsx";
+@source "./shared/ui/sheet.tsx";
+@source "./shared/ui/tooltip.tsx";
+@source "./shared/ui/button.tsx";
+@theme inline {
+ --color-sidebar:#f8f8f8;
+ --color-sidebar-foreground:#292929;
+ --color-sidebar-accent:#ebebeb;
+ --color-sidebar-accent-foreground:#202020;
+ --color-sidebar-border:#e8e8e8;
+ --color-sidebar-ring:#7895ab;
+ --color-background:#fff;
+ --color-foreground:#292929;
+ --color-border:#e8e8e8;
+ --color-muted:#f4f4f4;
+ --color-muted-foreground:#686868;
+ --color-accent:#ededed;
+ --color-ring:#7895ab;
+ --radius-lg:10px;
+ --radius-md:6px;
+}
+@font-face{font-family:"Source Serif 4";src:url("/fonts/source-serif-4.ttf") format("truetype");font-style:normal;font-weight:200 900;font-display:swap}
+@font-face{font-family:"Source Serif 4";src:url("/fonts/source-serif-4-italic.ttf") format("truetype");font-style:italic;font-weight:200 900;font-display:swap}
+@scope (.buaa-navigation) { @tailwind utilities; }
+.shell{display:flex;min-height:100dvh}
+#navigation-root{flex-shrink:0}
+#navigation-root [data-slot=sidebar-wrapper]{min-height:100dvh;width:auto}
+.shell>.workspace{margin-left:0;width:auto;flex:1;min-width:0}
+body .topbar,body.home-page .topbar{padding:0 28px;height:56px;max-width:none;justify-content:space-between}
+body .topbar-title{display:flex;align-items:center;gap:14px}
+#navigation-trigger{display:flex;align-items:center}
+.buaa-navigation{font-family:inherit}
+.buaa-navigation [data-slot=sidebar-container]{border-right:1px solid #e8e8e8}
+.buaa-navigation [data-slot=sidebar-header]{height:64px;justify-content:center}
+.buaa-navigation [data-slot=sidebar-menu]{list-style:none;margin:0;padding:0;gap:5px}
+.buaa-navigation [data-slot=sidebar-menu-button]{border:0;border-radius:6px;box-shadow:none;font-size:14px;font-weight:450;min-height:36px;line-height:20px;justify-content:flex-start;text-decoration:none;color:#333;background:transparent;cursor:pointer}
+.buaa-navigation [data-slot=sidebar-menu-button]:hover,.buaa-navigation [data-slot=sidebar-menu-button][data-active]{background:#eaeaea}
+.buaa-navigation [data-slot=sidebar-menu-button] svg{width:18px;height:18px;flex-shrink:0}
+.buaa-navigation .nav-brand{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:22px;font-weight:400;letter-spacing:-.3px;line-height:36px;padding-right:4px;color:#14202e}.buaa-navigation .nav-brand-university{font-weight:700;color:#2b6ca3}.buaa-navigation .nav-brand-learn{font-style:italic}
+.buaa-navigation [data-slot=sidebar-group-label]{font-size:12px;color:#737373}
+.buaa-navigation [data-slot=sidebar-footer]{border-top:1px solid #e8e8e8;margin-top:auto}
+.buaa-navigation [data-slot=sidebar-trigger]{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;min-height:34px;padding:7px;border:0;background:transparent;border-radius:6px;color:#444}
+.buaa-navigation [data-slot=sidebar-trigger]:hover{background:#eee}
+.buaa-navigation [data-slot=sidebar-trigger] svg{width:18px;height:18px}
+.buaa-navigation [data-slot=sidebar-menu-button]:focus-visible,.buaa-navigation [data-slot=sidebar-trigger]:focus-visible{outline:2px solid #7895ab;outline-offset:2px}
+[data-slot=tooltip-content]{background:#292929;color:white;padding:6px 10px;border-radius:6px;font-size:12px;z-index:70}
+[data-slot=sheet-overlay]{position:fixed;inset:0;background:#0006;z-index:50}
+[data-slot=sidebar][data-mobile=true]{position:fixed;inset:0 auto 0 0;width:min(288px,85vw);height:100dvh;z-index:51;background:#f8f8f8;padding:0;border:0}
+@media(max-width:767px){body .topbar,body.home-page .topbar{padding:0 16px}#navigation-root{width:0}}
+
+.buaa-navigation[data-mobile=true]>[data-slot=sheet-close]{display:flex;position:absolute;right:10px;top:12px;width:32px;height:32px;min-height:32px;padding:6px;border:0;background:#eee;border-radius:6px}.buaa-navigation[data-mobile=true]>[data-slot=sheet-close] svg{width:18px;height:18px}
+/* Shared icon column keeps the icon coordinates stable in both desktop states. */
+.buaa-navigation [data-slot=sidebar-header]{height:64px;min-height:64px;box-sizing:border-box;padding:8px 10px;flex-shrink:0}
+.buaa-navigation [data-slot=sidebar-group],.buaa-navigation [data-slot=sidebar-footer]{padding:8px 10px}
+.buaa-navigation [data-slot=sidebar-menu-button]{height:36px!important;min-height:36px;box-sizing:border-box;padding:9px!important;gap:10px;white-space:nowrap}
+.buaa-navigation [data-slot=sidebar-menu-item]{position:relative}
+.buaa-navigation [data-slot=sidebar-menu-badge]{top:50%!important;transform:translateY(-50%);right:9px;height:20px;line-height:20px}
+.buaa-navigation [data-slot=sidebar-menu-button]:has(+[data-slot=sidebar-menu-badge]){padding-right:32px!important}
+.buaa-navigation [data-collapsible=icon] [data-slot=sidebar-menu-button]{width:36px!important;justify-content:flex-start}
+.buaa-navigation [data-collapsible=icon] [data-slot=sidebar-menu-button]>span,.buaa-navigation [data-collapsible=icon] [data-slot=sidebar-menu-badge]{display:none}
+.buaa-navigation [data-collapsible=icon] [data-slot=sidebar-menu-button]:has(+[data-slot=sidebar-menu-badge]){padding-right:9px!important}
+.task-progress-component{display:flex;flex-wrap:wrap;gap:6px;width:170px;min-width:100px;color:#526a7e}
+.task-progress-component [data-slot=progress-label],.task-progress-component [data-slot=progress-value]{font-size:11px;line-height:16px;font-variant-numeric:tabular-nums}
+.task-progress-component [data-slot=progress-value]{margin-left:auto}
+.task-progress-component [data-slot=progress-track]{position:relative;display:flex;height:6px;width:100%;overflow:hidden;border-radius:999px;background:#dfe6ec}
+.task-progress-component [data-slot=progress-indicator]{height:100%;background:#597e9d;border-radius:inherit;transition:width .3s ease}
+.task-progress-component[data-indeterminate] [data-slot=progress-indicator]{width:35%;animation:task-progress-wait 1.6s ease-in-out infinite}
+@keyframes task-progress-wait{0%{transform:translateX(-110%)}100%{transform:translateX(300%)}}
+@media(prefers-reduced-motion:reduce){.task-progress-component [data-slot=progress-indicator]{animation:none;transition:none}}
+@media(max-width:760px){.task-progress-component{width:120px}}

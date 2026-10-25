@@ -1,0 +1,27 @@
+.venv/
+data/
+.env
+.env.local
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.log
+.DS_Store
+frontend/node_modules/
+
+# Local credentials, generated files and private teaching materials
+.env.*
+!.env.example
+build/
+node_modules/
+*.sqlite*
+*.db
+*.pdf
+*.mp4
+*.webm
+.coverage
+htmlcov/
+/design-qa.md

@@ -1,0 +1,52 @@
+[
+  {
+    "component": "combobox",
+    "source": "https://ui.shadcn.com/r/styles/base-nova/combobox.json",
+    "sha256": "0df11848e07ee063e55845f475fe89797299079b0951a016a0784ddd832aff65",
+    "changes": [
+      "local import paths",
+      "Lucide icon expansion",
+      "project positioner class"
+    ]
+  },
+  {
+    "component": "button",
+    "source": "https://ui.shadcn.com/r/styles/base-nova/button.json",
+    "sha256": "313353436d0fcc8e44ab470adb614b9fd013d28626f624328ea0d66d41a6c81b",
+    "changes": [
+      "local import paths",
+      "Lucide icon expansion",
+      "project positioner class"
+    ]
+  },
+  {
+    "component": "input-group",
+    "source": "https://ui.shadcn.com/r/styles/base-nova/input-group.json",
+    "sha256": "d6c74e82a2aa02980b337da519fc5b74dfc841e92453e32dd241e6baa1d9d9a6",
+    "changes": [
+      "local import paths",
+      "Lucide icon expansion",
+      "project positioner class"
+    ]
+  },
+  {
+    "component": "input",
+    "source": "https://ui.shadcn.com/r/styles/base-nova/input.json",
+    "sha256": "dab990dfefa0ba78854ab6602ad074270dba9d7d1262184d9bfbb62bd990903b",
+    "changes": [
+      "local import paths",
+      "Lucide icon expansion",
+      "project positioner class"
+    ]
+  },
+  {
+    "component": "textarea",
+    "source": "https://ui.shadcn.com/r/styles/base-nova/textarea.json",
+    "sha256": "82601c91ffc6c727d924162c78d7cb853114bcced4e2eb922a68ca12d4239c0f",
+    "changes": [
+      "local import paths",
+      "Lucide icon expansion",
+      "project positioner class"
+    ]
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "name": "sidebar",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/sidebar.json",
+    "sha256": "02b1ea430fb246da062048f0161a01d1b34a2c787f6974958c9b20a3142120a6"
+  },
+  {
+    "name": "separator",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/separator.json",
+    "sha256": "3ad65962485f464592201cb90017b3d52a5c9fe272ce41ee049485b4c42e0d76"
+  },
+  {
+    "name": "sheet",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/sheet.json",
+    "sha256": "72b36d92af7fcbc9bd2d1d4ef0cbc65f4fc8178f7bb2bedaf657460f15011cf4"
+  },
+  {
+    "name": "skeleton",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/skeleton.json",
+    "sha256": "85692a09912f518ffd64c540dfcf098fe748a807baf288c107cf8126496cf886"
+  },
+  {
+    "name": "tooltip",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/tooltip.json",
+    "sha256": "2f55867faecee2d3616cfd8c6a80b538909a21e62fdfa2788b1ead56093e5395"
+  },
+  {
+    "name": "use-mobile",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/use-mobile.json",
+    "sha256": "f4bfd840445a84352265d7cf66fcd886454b6a2f3834f7caf29d00f68620f87d"
+  },
+  {
+    "name": "progress",
+    "url": "https://ui.shadcn.com/r/styles/base-nova/progress.json",
+    "sha256": "359e72beff723311ec2e4d5154a0f80dedd253bd6b16959a4db0773714ceab52"
+  }
+]
