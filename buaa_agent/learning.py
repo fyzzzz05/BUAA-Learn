@@ -109,9 +109,11 @@ def response_schema(output_model):
 class Model:
     def __init__(self, store):
         saved = store.setting("model", {})
-        self.base_url = os.getenv("BUAA_LLM_BASE_URL", saved.get("base_url", ""))
-        self.model = os.getenv("BUAA_LLM_MODEL", saved.get("model", ""))
-        self.key = os.getenv("BUAA_LLM_API_KEY", "")
+        env_base = os.getenv("BUAA_LLM_BASE_URL", "").strip()
+        self.base_url = (env_base or saved.get("base_url", "")).rstrip("/")
+        self.model = os.getenv("BUAA_LLM_MODEL", "").strip() or saved.get("model", "")
+        # An environment key belongs to the endpoint declared alongside it.
+        self.key = os.getenv("BUAA_LLM_API_KEY", "") if env_base else ""
         self.lock = threading.RLock()
 
     @property
@@ -132,7 +134,10 @@ class Model:
         if not p.hostname or not model.strip():
             raise LearningError("请填写模型服务地址和模型名称")
         with self.lock:
-            self.base_url, self.model = base_url.rstrip("/"), model.strip()
+            endpoint = base_url.rstrip("/")
+            if endpoint != self.base_url:
+                self.key = ""
+            self.base_url, self.model = endpoint, model.strip()
             if key is not None:
                 self.key = key
 

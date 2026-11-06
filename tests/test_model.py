@@ -36,7 +36,7 @@ def response_output(payload, **extra):
 
 @pytest.mark.parametrize("base", ["https://api.deepseek.com", "https://api.deepseek.com/v1/"])
 def test_deepseek_sends_schema_and_reads_only_final_output(model, monkeypatch, base):
-    model.configure(base, "deepseek-flash")
+    model.configure(base, "deepseek-flash", "synthetic-key")
     captured = {}
     def post(url, **kwargs):
         captured.update(url=url, **kwargs)
@@ -124,3 +124,29 @@ def test_all_learning_requests_supply_their_output_contract():
     lessons = [{"id": "1001", "title": "synthetic", "date": "2026-10-22", "source_url": "https://example.invalid"}]
     assert ask(model, "article", materials, lessons)["answer"] == "冠词 [c0]"
     assert seen == [Extraction, Keywords, Answer]
+
+def test_key_is_kept_only_for_the_same_endpoint(model, monkeypatch):
+    model.configure("https://api.deepseek.com/", "updated-model")
+    assert model.public()["has_key"]
+    model.configure("https://other.example.invalid/v1", "other-model")
+
+    def post(url, **kwargs):
+        assert url == "https://other.example.invalid/v1/chat/completions"
+        assert "Authorization" not in kwargs["headers"]
+        return httpx.Response(200, json={"choices": [{
+            "finish_reason": "stop", "message": {"content": '{"summary":"synthetic"}'}}]})
+
+    monkeypatch.setattr("buaa_agent.learning.httpx.post", post)
+    assert model.complete("system", "synthetic") == {"summary": "synthetic"}
+
+
+def test_blank_environment_preserves_settings_and_unscoped_key_is_ignored(monkeypatch):
+    monkeypatch.setenv("BUAA_LLM_BASE_URL", "")
+    monkeypatch.setenv("BUAA_LLM_MODEL", "")
+    monkeypatch.setenv("BUAA_LLM_API_KEY", "synthetic-unscoped-key")
+    store = SimpleNamespace(setting=lambda *_: {"base_url": "https://saved.example.invalid/v1", "model": "saved"})
+    model = Model(store)
+    assert model.ready and model.model == "saved" and not model.public()["has_key"]
+    monkeypatch.setenv("BUAA_LLM_BASE_URL", "https://env.example.invalid/v1/")
+    model = Model(store)
+    assert model.base_url == "https://env.example.invalid/v1" and model.public()["has_key"]

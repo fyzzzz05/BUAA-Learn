@@ -29,14 +29,16 @@ npm run dist:mac
 
 ## 配置与数据
 
-通过菜单 **文件 → 打开配置目录** 找到 `.env.local`，填写 `BUAA_LLM_BASE_URL`、`BUAA_LLM_MODEL`、`BUAA_LLM_API_KEY` 后重启。已设置的系统环境变量优先。首次启动自动创建空模板；不会复制开发者的密钥或账户。
+通过菜单 **文件 → 打开配置目录** 找到 `.env.local`，填写 `BUAA_LLM_BASE_URL`、`BUAA_LLM_MODEL`、`BUAA_LLM_API_KEY` 后重启。非空环境配置优先。使用环境变量保存密钥时需同时填写服务地址。首次启动自动创建空模板；不会复制开发者的密钥或账户。
 
 - macOS：`~/Library/Application Support/BUAA Learn/`
 - Windows：`%APPDATA%\BUAA Learn\`
 
-数据位于其 `data/` 子目录，诊断记录位于 `desktop.log`。也可在应用 **模型与设置** 中配置；页面填写的密钥仅在当次运行生效。旧 Web 版用户如需迁移，退出两个版本后，将旧 `data/` 内容复制至上述 `data/`，再把自己的 `.env.local` 模型配置复制到配置目录。
+数据位于其 `data/` 子目录，诊断记录位于 `desktop.log`。也可在应用 **模型与设置** 中配置；页面填写的密钥在当次运行生效，更换服务地址后需填写该服务的密钥。旧 Web 版用户如需迁移，退出两个版本后，将旧 `data/` 内容复制至上述 `data/`，再把自己的 `.env.local` 模型配置复制到配置目录。
 
 macOS 关闭窗口后应用仍运行，自动化可继续；使用菜单退出或 ⌘Q 才会停止服务。Windows 关闭最后一个窗口即退出。学校登录仍需用户在独立 Chromium 窗口完成，重启后重新登录。
+
+已有材料的课次可以从课次页或课堂原文页导出完整 TXT，文件保留每段的起止时间。
 
 ## 构建与分发边界
 
