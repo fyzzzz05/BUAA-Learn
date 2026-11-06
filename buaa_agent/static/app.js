@@ -203,11 +203,15 @@ function analysisView() {
   if (!a.timeline_version) return empty('这份笔记尚无课堂时间轴','',button('重新分析','analyze',currentLesson.lesson.id,true));
   return `${a.timeline_status==='partial'?'<p class="notice amber">部分时间段尚未整理完成。</p>':''}${timelineView()}`;
 }
+function transcriptDownload() {
+  if (!currentLesson.materials?.segments?.length) return '';
+  return `<a class="button" href="/api/lessons/${enc(currentLesson.lesson.id)}/transcript.txt" download>导出课堂文本</a>`;
+}
 function transcriptView() {
   const m=currentLesson.materials;
   if (!m&&!currentLesson.analysis?.evidence) return materialEmpty();
   const range=readerRange?transcriptRange():[];
-  return `<div class="inline-heading"><h3>原始识别文本</h3><input id="transcript-search" class="search" value="${esc(readerSearch)}" placeholder="查找课堂原话" aria-label="查找课堂原话"></div>${readerRange?`<div class="transcript-range notice"><span>当前原文范围：${range.length?clock(range[0].start)+'–'+clock(Math.max(...range.map(s=>s.end))):'来源暂不可用'}</span>${button('显示全部文本','clear-source-range')}</div>`:''}<div id="transcript-rows">${transcriptRows(visibleTranscript())}</div>`;
+  return `<div class="inline-heading"><h3>原始识别文本</h3><input id="transcript-search" class="search" value="${esc(readerSearch)}" placeholder="查找课堂原话" aria-label="查找课堂原话">${transcriptDownload()}</div>${readerRange?`<div class="transcript-range notice"><span>当前原文范围：${range.length?clock(range[0].start)+'–'+clock(Math.max(...range.map(s=>s.end))):'来源暂不可用'}</span>${button('显示全部文本','clear-source-range')}</div>`:''}<div id="transcript-rows">${transcriptRows(visibleTranscript())}</div>`;
 }
 function transcriptRange() {
   const rows=readerRange&&currentLesson.analysis?.evidence?Object.values(currentLesson.analysis.evidence):currentLesson.materials?.segments||Object.values(currentLesson.analysis?.evidence||{});
@@ -240,7 +244,7 @@ function lessonOverview(a) {
 }
 function lessonView() {
   const {lesson:l,materials:m,analysis:a}=currentLesson;
-  return `<div class="panel lesson-overview"><div class="lesson-heading"><div class="overview-heading"><div><div class="overview-status">${esc(date(l.date))} · ${esc(l.teachers)}${l.duration?' · '+clock(l.duration):''}</div><h2>${esc(l.title)}</h2></div>${a?button('继续学习','open-reader','',true):button('分析这节课','analyze',l.id,true,!l.has_recording?'disabled':'')}</div><div class="overview-tools">${a?button('本节课内容','open-reader','analysis'):''}${button(`课堂原文${m?' · '+m.segments.length:''}`,'open-reader','transcript')}${button(`PPT${m?' · '+m.slides.length+' 张':''}`,'open-reader','slides')}<a class="button" href="${esc(l.source_url)}" target="_blank" rel="noreferrer">原始回放</a>${a?`<a class="button" href="/api/lessons/${enc(l.id)}/export" download>导出笔记</a>`:''}<details class="overview-operations"><summary>更多操作</summary><div class="actions">${button(m?'刷新材料':'获取材料','materials',l.id,false,!l.has_recording?'disabled':'')}${a?button('重新分析','analyze',l.id):''}${button('材料情况','open-reader','quality')}</div></details></div></div>${a?lessonOverview(a):`<div class="overview-empty"><h3>${l.has_recording?'准备开始这节课':'课堂回放尚未发布'}</h3><p>${m?`已获取 ${m.segments.length} 段课堂原文和 ${m.slides.length} 张截图，分析后将在这里展示课堂主题、作业和重要事项。`:'回放材料就绪后，可以生成本节课的学习笔记。'}</p>${m?button('阅读课堂原文','open-reader','transcript'):''}</div>`}</div>`;
+  return `<div class="panel lesson-overview"><div class="lesson-heading"><div class="overview-heading"><div><div class="overview-status">${esc(date(l.date))} · ${esc(l.teachers)}${l.duration?' · '+clock(l.duration):''}</div><h2>${esc(l.title)}</h2></div>${a?button('继续学习','open-reader','',true):button('分析这节课','analyze',l.id,true,!l.has_recording?'disabled':'')}</div><div class="overview-tools">${a?button('本节课内容','open-reader','analysis'):''}${button(`课堂原文${m?' · '+m.segments.length:''}`,'open-reader','transcript')}${transcriptDownload()}${button(`PPT${m?' · '+m.slides.length+' 张':''}`,'open-reader','slides')}<a class="button" href="${esc(l.source_url)}" target="_blank" rel="noreferrer">原始回放</a>${a?`<a class="button" href="/api/lessons/${enc(l.id)}/export" download>导出笔记</a>`:''}<details class="overview-operations"><summary>更多操作</summary><div class="actions">${button(m?'刷新材料':'获取材料','materials',l.id,false,!l.has_recording?'disabled':'')}${a?button('重新分析','analyze',l.id):''}${button('材料情况','open-reader','quality')}</div></details></div></div>${a?lessonOverview(a):`<div class="overview-empty"><h3>${l.has_recording?'准备开始这节课':'课堂回放尚未发布'}</h3><p>${m?`已获取 ${m.segments.length} 段课堂原文和 ${m.slides.length} 张截图，分析后将在这里展示课堂主题、作业和重要事项。`:'回放材料就绪后，可以生成本节课的学习笔记。'}</p>${m?button('阅读课堂原文','open-reader','transcript'):''}</div>`}</div>`;
 }
 function qualityView() {
   const m=currentLesson.materials;

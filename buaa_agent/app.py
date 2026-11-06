@@ -1,9 +1,10 @@
 import os
+import re
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi import Path as ApiPath
@@ -85,7 +86,7 @@ def create_app(directory=None, *, desktop_token=None):
     if desktop_token:
         @app.get("/api/desktop/health")
         def desktop_health() -> dict:
-            return {"status": "ready", "version": "0.2.0"}
+            return {"status": "ready", "version": "0.2.1"}
 
         @app.post("/api/desktop/quit")
         def desktop_quit() -> dict:
@@ -246,6 +247,35 @@ def create_app(directory=None, *, desktop_token=None):
                         body.api_key.get_secret_value() if body.api_key is not None else None)
         store.set_setting("model", {"base_url": model.base_url, "model": model.model})
         return model.public()
+
+    @app.get("/api/lessons/{lesson_id}/transcript.txt", response_class=Response)
+    def download_transcript(lesson_id: Annotated[str, ApiPath(pattern=r"^[0-9]+$")]) -> Response:
+        account = owner()
+        try:
+            lesson = service.owned_lesson(account, lesson_id)
+        except PortalError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        material = store.get(account, "materials", lesson_id) or {}
+        rows = material.get("segments") or []
+        if not rows:
+            raise HTTPException(404, "暂无课堂文本，请先获取材料")
+
+        title = f"{lesson.get('course_name', '')}-{lesson['title']}"
+        safe_title = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", title).strip(" .")[:90]
+        filename = f"{lesson_id}-{safe_title}-课堂文本.txt"
+        lines = [
+            f"[{time_label(row['start'])}–{time_label(row['end'])}] {row['text']}"
+            for row in rows
+        ]
+        # A UTF-8 BOM also makes Chinese text readable in older Windows editors.
+        content = ("\r\n".join(lines) + "\r\n").encode("utf-8-sig")
+        return Response(content, media_type="text/plain; charset=utf-8", headers={
+            "Content-Disposition": (
+                f'attachment; filename="lesson-{lesson_id}-transcript.txt"; '
+                f"filename*=UTF-8''{quote(filename, safe='')}"
+            ),
+            "Cache-Control": "no-store",
+        })
 
     @app.get("/api/lessons/{lesson_id}/export")
     def export(lesson_id: str) -> Response:

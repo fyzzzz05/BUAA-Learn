@@ -1,4 +1,4 @@
-"""Exercise the distributed executable in an empty account, including its browser."""
+"""Exercise the distributed executable with synthetic data and its bundled browser."""
 import json
 import os
 import secrets
@@ -24,6 +24,20 @@ def main():
             "BUAA_LLM_MODEL=desktop-smoke-model\nBUAA_BROWSER_CHANNEL=chromium\n", encoding="utf-8")
         subprocess.run([str(executable), "--user-data", directory, "--check-browser"],
                        env=env, check=True, timeout=90)
+        from buaa_agent.store import Store
+
+        store = Store(Path(directory) / "data")
+        try:
+            store.set_setting("profile", {"owner": "smoke", "name": "合成账号"})
+            store.put("smoke", "course", "demo", {"semester": "synthetic"})
+            store.put("smoke", "lesson", "1001", {
+                "course_id": "demo", "course_name": "合成课程", "title": "第一课",
+            })
+            store.put("smoke", "materials", "1001", {"segments": [
+                {"start": 10, "end": 20, "text": "合成课堂文本"},
+            ]})
+        finally:
+            store.db.close()
         process = subprocess.Popen([str(executable), "--user-data", directory], env=env,
                                    stdout=subprocess.PIPE, text=True)
         try:
@@ -68,6 +82,10 @@ def main():
                 raise AssertionError("Desktop data was exposed without token")
             except urllib.error.HTTPError as error:
                 assert error.code == 403
+            with request("/api/lessons/1001/transcript.txt") as response:
+                assert response.headers["Content-Disposition"].startswith("attachment;")
+                assert response.read().decode("utf-8-sig") == "[00:00:10–00:00:20] 合成课堂文本\r\n"
+            print("BUAA_TRANSCRIPT_OK")
             with request("/api/desktop/quit", method="POST") as response:
                 assert response.status == 200
             assert process.wait(timeout=20) == 0
