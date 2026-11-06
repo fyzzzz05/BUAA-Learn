@@ -107,25 +107,46 @@ def response_schema(output_model):
 
 
 class Model:
-    def __init__(self, store):
+    def __init__(self, store, protector=None):
+        self.store = store
+        self.protector = protector
         saved = store.setting("model", {})
-        env_base = os.getenv("BUAA_LLM_BASE_URL", "").strip()
-        self.base_url = (env_base or saved.get("base_url", "")).rstrip("/")
+        self.env_endpoint = os.getenv("BUAA_LLM_BASE_URL", "").strip().rstrip("/")
+        self.env_key = os.getenv("BUAA_LLM_API_KEY", "")
+        self.base_url = self.env_endpoint or saved.get("base_url", "").rstrip("/")
         self.model = os.getenv("BUAA_LLM_MODEL", "").strip() or saved.get("model", "")
-        # An environment key belongs to the endpoint declared alongside it.
-        self.key = os.getenv("BUAA_LLM_API_KEY", "") if env_base else ""
+        keys = saved.get("protected_keys", {})
+        self.keys = keys if isinstance(keys, dict) else {}
+        self.key, self.key_state = self._key_for(self.base_url, self.keys)
         self.lock = threading.RLock()
+
+    def _key_for(self, endpoint, keys):
+        if self.protector and endpoint in keys:
+            ciphertext = keys[endpoint]
+            if ciphertext is None:
+                return "", "none"
+            try:
+                return self.protector.unprotect(ciphertext, endpoint), "saved"
+            except (OSError, ValueError, TypeError):
+                return "", "unavailable"
+        if endpoint and endpoint == self.env_endpoint and self.env_key:
+            return self.env_key, "environment"
+        return "", "none"
 
     @property
     def ready(self):
-        return bool(self.base_url and self.model)
+        return bool(self.base_url and self.model and self.key_state != "unavailable")
 
     def public(self):
         with self.lock:
             return {"base_url": self.base_url, "model": self.model,
-                    "has_key": bool(self.key), "ready": self.ready}
+                    "has_key": bool(self.key), "ready": self.ready,
+                    "key_state": self.key_state, "can_save_key": self.protector is not None}
 
-    def configure(self, base_url, model, key=None):
+    def configure(self, base_url, model, key=None, *, save=False):
+        base_url = base_url.strip()
+        if key is not None and len(key) > 8192:
+            raise LearningError("密钥长度超出限制")
         p = urlparse(base_url)
         if p.username or p.password or p.query or p.fragment:
             raise LearningError("模型地址不能包含凭据、查询参数或片段")
@@ -133,16 +154,33 @@ class Model:
             raise LearningError("模型地址请使用 HTTPS；本地模型可使用 localhost HTTP")
         if not p.hostname or not model.strip():
             raise LearningError("请填写模型服务地址和模型名称")
+        endpoint = base_url.rstrip("/")
         with self.lock:
-            endpoint = base_url.rstrip("/")
-            if endpoint != self.base_url:
-                self.key = ""
-            self.base_url, self.model = endpoint, model.strip()
+            keys = self.keys.copy()
             if key is not None:
-                self.key = key
+                if self.protector:
+                    try:
+                        keys[endpoint] = self.protector.protect(key, endpoint) if key else None
+                    except (OSError, ValueError):
+                        raise LearningError("无法加密密钥，原有配置已保留") from None
+                next_key = key
+                state = ("saved" if self.protector else "session") if key else "none"
+            elif endpoint == self.base_url:
+                next_key, state = self.key, self.key_state
+            else:
+                next_key, state = self._key_for(endpoint, keys)
+            if save:
+                config = {"base_url": endpoint, "model": model.strip()}
+                if keys:
+                    config["protected_keys"] = keys
+                self.store.set_setting("model", config)
+            self.base_url, self.model = endpoint, model.strip()
+            self.keys, self.key, self.key_state = keys, next_key, state
 
     def complete(self, system, prompt, json_mode=True, *, output_model=None):
         with self.lock:
+            if self.key_state == "unavailable":
+                raise LearningError("无法读取已保存的密钥，请在设置中重新输入或移除")
             if not self.ready:
                 raise LearningError("请先在设置中配置模型服务，再开始分析或问答")
             base_url, model, key = self.base_url, self.model, self.key

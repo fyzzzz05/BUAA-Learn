@@ -1,6 +1,7 @@
 import os
 import re
 import secrets
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
@@ -45,7 +46,12 @@ def create_app(directory=None, *, desktop_token=None):
     directory = Path(directory or os.getenv("BUAA_DATA_DIR", "./data")).resolve()
     store = Store(directory)
     auth = Auth(store)
-    model = Model(store)
+    protector = None
+    if desktop_token and sys.platform == "win32":
+        from . import windows_secrets
+
+        protector = windows_secrets
+    model = Model(store, protector)
     service = Service(store, auth, model)
 
     @asynccontextmanager
@@ -57,7 +63,7 @@ def create_app(directory=None, *, desktop_token=None):
         # Workers blocked on an external provider may still finish during process shutdown.
         # SQLite connections are released by process exit after daemon workers terminate.
 
-    app = FastAPI(title="BUAA Learning Agent", version="0.2.0", lifespan=lifespan,
+    app = FastAPI(title="BUAA Learning Agent", version="0.2.2", lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)
     app.state.store, app.state.auth, app.state.service, app.state.model = store, auth, service, model
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]"])
@@ -86,7 +92,7 @@ def create_app(directory=None, *, desktop_token=None):
     if desktop_token:
         @app.get("/api/desktop/health")
         def desktop_health() -> dict:
-            return {"status": "ready", "version": "0.2.1"}
+            return {"status": "ready", "version": "0.2.2"}
 
         @app.post("/api/desktop/quit")
         def desktop_quit() -> dict:
@@ -244,8 +250,8 @@ def create_app(directory=None, *, desktop_token=None):
     @app.put("/api/model")
     def configure_model(body: ModelInput) -> dict:
         model.configure(body.base_url, body.model,
-                        body.api_key.get_secret_value() if body.api_key is not None else None)
-        store.set_setting("model", {"base_url": model.base_url, "model": model.model})
+                        body.api_key.get_secret_value() if body.api_key is not None else None,
+                        save=True)
         return model.public()
 
     @app.get("/api/lessons/{lesson_id}/transcript.txt", response_class=Response)

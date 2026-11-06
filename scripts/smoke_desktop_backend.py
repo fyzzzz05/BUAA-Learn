@@ -38,62 +38,90 @@ def main():
             ]})
         finally:
             store.db.close()
-        process = subprocess.Popen([str(executable), "--user-data", directory], env=env,
-                                   stdout=subprocess.PIPE, text=True)
-        try:
-            # Bound startup reading even when the frozen executable cannot start.
-            import concurrent.futures
-
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                address = pool.submit(process.stdout.readline)
-                try:
-                    line = address.result(timeout=40).strip()
-                except TimeoutError:
-                    process.kill()
-                    raise
-            assert line.startswith("BUAA_PORT="), line
-            origin = f"http://127.0.0.1:{int(line.split('=')[1])}"
-
-            def request(route, *, authenticated=True, method="GET"):
-                headers = {"X-BUAA-Local": "1"}
-                if authenticated:
-                    headers["X-BUAA-Desktop"] = env["BUAA_DESKTOP_TOKEN"]
-                return urllib.request.urlopen(urllib.request.Request(
-                    origin + route, headers=headers, method=method), timeout=2)
-
-            for _ in range(100):
-                try:
-                    with request("/api/desktop/health") as response:
-                        assert json.load(response)["status"] == "ready"
-                    break
-                except (OSError, urllib.error.URLError):
-                    time.sleep(.2)
-            else:
-                raise AssertionError("Frozen service never became ready")
-            with request("/api/state") as response:
-                state = json.load(response)
-                assert state["courses"] == [] and state["model"]["model"] == "desktop-smoke-model"
-            with request("/") as response:
-                assert b"BUAA" in response.read()
-            with request("/app.js") as response:
-                assert response.status == 200
+        for phase in range(3 if sys.platform == "win32" else 1):
+            process = subprocess.Popen([str(executable), "--user-data", directory], env=env,
+                                       stdout=subprocess.PIPE, text=True)
             try:
-                request("/api/state", authenticated=False)
-                raise AssertionError("Desktop data was exposed without token")
-            except urllib.error.HTTPError as error:
-                assert error.code == 403
-            with request("/api/lessons/1001/transcript.txt") as response:
-                assert response.headers["Content-Disposition"].startswith("attachment;")
-                assert response.read().decode("utf-8-sig") == "[00:00:10–00:00:20] 合成课堂文本\r\n"
-            print("BUAA_TRANSCRIPT_OK")
-            with request("/api/desktop/quit", method="POST") as response:
-                assert response.status == 200
-            assert process.wait(timeout=20) == 0
-            print("BUAA_FROZEN_SERVICE_OK")
-        finally:
-            if process.poll() is None:
-                process.kill()
-                process.wait(timeout=10)
+                # Bound startup reading even when the frozen executable cannot start.
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    address = pool.submit(process.stdout.readline)
+                    try:
+                        line = address.result(timeout=40).strip()
+                    except TimeoutError:
+                        process.kill()
+                        raise
+                assert line.startswith("BUAA_PORT="), line
+                origin = f"http://127.0.0.1:{int(line.split('=')[1])}"
+
+                def request(route, *, authenticated=True, method="GET", data=None):
+                    headers = {"X-BUAA-Local": "1", "Content-Type": "application/json"}
+                    if authenticated:
+                        headers["X-BUAA-Desktop"] = env["BUAA_DESKTOP_TOKEN"]
+                    return urllib.request.urlopen(urllib.request.Request(
+                        origin + route, headers=headers, method=method,
+                        data=json.dumps(data).encode() if data is not None else None), timeout=2)
+
+                for _ in range(100):
+                    try:
+                        with request("/api/desktop/health") as response:
+                            assert json.load(response)["status"] == "ready"
+                        break
+                    except (OSError, urllib.error.URLError):
+                        time.sleep(.2)
+                else:
+                    raise AssertionError("Frozen service never became ready")
+                with request("/api/state") as response:
+                    state = json.load(response)
+                    assert state["courses"] == [] and state["model"]["model"] == "desktop-smoke-model"
+                with request("/") as response:
+                    assert b"BUAA" in response.read()
+                with request("/app.js") as response:
+                    assert response.status == 200
+                try:
+                    request("/api/state", authenticated=False)
+                    raise AssertionError("Desktop data was exposed without token")
+                except urllib.error.HTTPError as error:
+                    assert error.code == 403
+                with request("/api/lessons/1001/transcript.txt") as response:
+                    assert response.headers["Content-Disposition"].startswith("attachment;")
+                    assert response.read().decode("utf-8-sig") == "[00:00:10–00:00:20] 合成课堂文本\r\n"
+                print("BUAA_TRANSCRIPT_OK")
+                if sys.platform == "win32":
+                    secret = "synthetic-dpapi-smoke-key"
+                    model = state["model"]
+                    assert model["can_save_key"]
+                    if phase == 1:
+                        assert model["key_state"] == "saved" and model["has_key"]
+                        assert model["base_url"] == "https://models.example.invalid/v1"
+                    else:
+                        assert model["key_state"] == "none" and not model["has_key"]
+                    if phase < 2:
+                        with request("/api/model", method="PUT", data={
+                            "base_url": "https://models.example.invalid/v1",
+                            "model": "desktop-smoke-model",
+                            "api_key": secret if phase == 0 else "",
+                        }) as response:
+                            payload = response.read()
+                            assert secret.encode() not in payload
+                            assert json.loads(payload)["key_state"] == ("saved" if phase == 0 else "none")
+                with request("/api/desktop/quit", method="POST") as response:
+                    assert response.status == 200
+                assert process.wait(timeout=20) == 0
+                print("BUAA_FROZEN_SERVICE_OK")
+                if sys.platform == "win32" and phase == 0:
+                    for path in (Path(directory) / "data").glob("learning.sqlite3*"):
+                        assert secret.encode() not in path.read_bytes()
+
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=10)
+        if sys.platform == "win32":
+            database = Path(directory) / "data" / "learning.sqlite3"
+            assert b"synthetic-dpapi-smoke-key" not in database.read_bytes()
+            print("BUAA_DPAPI_RESTART_OK")
 
 
 if __name__ == "__main__":

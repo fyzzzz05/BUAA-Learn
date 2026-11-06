@@ -281,7 +281,7 @@ function jobsPage() {
   return `<div class="page-heading"><div><h1>任务状态</h1></div></div><section class="panel" aria-label="任务记录">${jobsView()}</section>`;
 }
 function settingsPage() {
-  return `<div class="page-heading"><div><h1>模型与设置</h1></div></div><div class="settings-columns"><section class="panel"><div class="panel-head"><h2>学习模型</h2>${badge(state.model.ready?(state.model.has_key?'已配置':'服务已填写'):'待配置',state.model.ready?(state.model.has_key?'green':'blue'):'')}</div><div class="panel-body"><form id="model-form" class="form-grid"><label>服务地址<input type="url" name="base_url" value="${esc(state.model.base_url)}" placeholder="https://你的模型服务地址/v1" required><small>兼容 Chat Completions 接口；本地模型可使用 localhost HTTP。</small></label><label>模型名称<input name="model" value="${esc(state.model.model)}" placeholder="服务商提供的模型 ID" required></label><label>API Key<input type="password" name="api_key" autocomplete="off" placeholder="${state.model.has_key?'已配置，留空保留现有密钥':'本地无鉴权模型可留空'}"><small>密钥只保存在当前进程中，重启后重新填写，或通过环境变量配置。</small></label><div class="notice">分析和问答会把相关课堂文本发送到你配置的服务。PPT 截图当前仅供本地页面查看，不发送给模型。</div><div><button class="primary">保存配置</button></div></form></div></section><aside class="panel"><div class="panel-body"><h3>本地运行</h3><ul><li>学校密码只输入在学校 SSO 页面。</li><li>学校凭据只留在进程内，关闭服务后需要重新登录。</li><li>课程、材料、笔记保存在本机 SQLite 数据库。</li><li>当前为个人使用的本地 Web，不开放公网访问。</li></ul></div></aside></div>`;
+  return `<div class="page-heading"><div><h1>模型与设置</h1></div></div><div class="settings-columns"><section class="panel"><div class="panel-head"><h2>学习模型</h2>${badge(state.model.ready?(state.model.has_key?'已配置':'服务已填写'):'待配置',state.model.ready?(state.model.has_key?'green':'blue'):'')}</div><div class="panel-body"><form id="model-form" class="form-grid"><label>服务地址<input type="url" name="base_url" value="${esc(state.model.base_url)}" placeholder="https://你的模型服务地址/v1" required><small>兼容 Chat Completions 接口；本地模型可使用 localhost HTTP。</small></label><label>模型名称<input name="model" value="${esc(state.model.model)}" placeholder="服务商提供的模型 ID" required></label><label>API Key<input type="password" name="api_key" autocomplete="off" placeholder="${state.model.key_state==='saved'?'已保存密钥':state.model.has_key?'已配置密钥':'本地无鉴权模型可留空'}">${state.model.key_state==='unavailable'?'<small role="alert">无法读取已保存的密钥，请重新输入或移除。</small>':!state.model.can_save_key?'<small>设置页输入的密钥仅在当前运行有效。</small>':''}</label><div class="notice">分析和问答会把相关课堂文本发送到你配置的服务。PPT 截图当前仅供本地页面查看，不发送给模型。</div><div class="actions"><button class="primary">保存配置</button>${state.model.can_save_key&&(state.model.has_key||state.model.key_state==='unavailable')?'<button type="submit" name="remove_key" formnovalidate>移除当前密钥</button>':''}</div></form></div></section><aside class="panel"><div class="panel-body"><h3>本地运行</h3><ul><li>学校密码只输入在学校 SSO 页面。</li><li>学校凭据只留在进程内，关闭服务后需要重新登录。</li><li>课程、材料、笔记保存在本机 SQLite 数据库。</li><li>当前为个人使用的本地 Web，不开放公网访问。</li></ul></div></aside></div>`;
 }
 async function renderRoute() {
   const version=++routeVersion, r=route();
@@ -366,7 +366,15 @@ document.addEventListener('submit',async event=>{
       homeDraft='';pendingChatCourse=String(courseId);
       if(location.hash===courseHref(courseId))await renderRoute();else location.hash=courseHref(courseId);
     }
-    if(form.id==='model-form'){await api('/model',{method:'PUT',body:JSON.stringify({base_url:data.get('base_url'),model:data.get('model'),api_key:data.get('api_key')||null})});toast('模型配置已保存');await refresh();}
+    if(form.id==='model-form'){
+      const remove=event.submitter?.name==='remove_key';
+      const config=remove
+        ? {base_url:state.model.base_url,model:state.model.model,api_key:''}
+        : {base_url:data.get('base_url'),model:data.get('model'),api_key:data.get('api_key')||null};
+      await api('/model',{method:'PUT',body:JSON.stringify(config)});
+      toast(remove?'当前密钥已移除':'模型配置已保存');
+      await refresh();
+    }
     if(form.id==='chat-form'){asking=true;if(submit)submit.textContent='正在查找课堂材料…';const result=await api(`/courses/${enc(currentCourse.course.id)}/ask`,{method:'POST',body:JSON.stringify({question:data.get('question')})});currentCourse.chat.unshift(result);$('#chat-history').innerHTML=currentCourse.chat.map(chatMessage).join('');form.reset();}
   }catch(e){toast(e.message);}finally{busy=false;asking=false;form.removeAttribute('aria-busy');if(submit?.isConnected){submit.disabled=false;if(form.id==='chat-form')submit.textContent='提问';if(form.id==='home-form'){submit.innerHTML=icon('arrow-up');submit.setAttribute('aria-label','发送问题');}}}
 });

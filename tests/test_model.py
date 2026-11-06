@@ -150,3 +150,47 @@ def test_blank_environment_preserves_settings_and_unscoped_key_is_ignored(monkey
     monkeypatch.setenv("BUAA_LLM_BASE_URL", "https://env.example.invalid/v1/")
     model = Model(store)
     assert model.base_url == "https://env.example.invalid/v1" and model.public()["has_key"]
+
+
+def test_protected_key_persistence_and_removal(tmp_path, monkeypatch):
+    from buaa_agent.store import Store
+
+    monkeypatch.setenv("BUAA_LLM_BASE_URL", "https://example.invalid/v1")
+    monkeypatch.setenv("BUAA_LLM_API_KEY", "environment-fallback")
+    endpoint = "https://example.invalid/v1"
+
+    def protect(value, address):
+        assert value == "synthetic-key" and address == endpoint
+        return "protected-test-token"
+
+    def unprotect(value, address):
+        assert value == "protected-test-token" and address == endpoint
+        return "synthetic-key"
+
+    protector = SimpleNamespace(protect=protect, unprotect=unprotect)
+    store = Store(tmp_path)
+    model = Model(store, protector)
+    model.configure(endpoint + "/", "example", "synthetic-key", save=True)
+    assert model.public()["key_state"] == "saved"
+    assert store.setting("model")["protected_keys"] == {endpoint: "protected-test-token"}
+    assert "synthetic-key" not in json.dumps(model.public())
+    store.close()
+
+    store = Store(tmp_path)
+    model = Model(store, protector)
+    assert model.key == "synthetic-key"
+    model.configure("https://other.invalid/v1", "other", save=True)
+    assert not model.public()["has_key"]
+    model.configure(endpoint, "example", save=True)
+    assert model.key == "synthetic-key"
+
+    def fail(*args):
+        raise OSError("synthetic encryption failure")
+
+    protector.protect = fail
+    with pytest.raises(LearningError, match="原有配置已保留"):
+        model.configure(endpoint, "changed", "replacement", save=True)
+    assert model.model == "example" and model.key == "synthetic-key"
+    model.configure(endpoint, "example", "", save=True)
+    assert not Model(store, protector).public()["has_key"]
+    store.close()
