@@ -63,7 +63,7 @@ def create_app(directory=None, *, desktop_token=None):
         # Workers blocked on an external provider may still finish during process shutdown.
         # SQLite connections are released by process exit after daemon workers terminate.
 
-    app = FastAPI(title="BUAA Learning Agent", version="0.2.2", lifespan=lifespan,
+    app = FastAPI(title="BUAA Learning Agent", version="0.2.3", lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)
     app.state.store, app.state.auth, app.state.service, app.state.model = store, auth, service, model
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]"])
@@ -92,7 +92,7 @@ def create_app(directory=None, *, desktop_token=None):
     if desktop_token:
         @app.get("/api/desktop/health")
         def desktop_health() -> dict:
-            return {"status": "ready", "version": "0.2.2"}
+            return {"status": "ready", "version": "0.2.3"}
 
         @app.post("/api/desktop/quit")
         def desktop_quit() -> dict:
@@ -109,6 +109,16 @@ def create_app(directory=None, *, desktop_token=None):
     async def model_error(request, exc):
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
+    @app.exception_handler(Exception)
+    async def internal_error(request: Request, exc: Exception):
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(
+                {"detail": "本地服务处理请求时出错，请重试（HTTP 500）"},
+                status_code=500,
+                headers={"Cache-Control": "no-store"},
+            )
+        return Response(status_code=500)
+
     def owner():
         if not auth.owner:
             raise LoginRequired("请先登录北航统一身份认证")
@@ -119,7 +129,7 @@ def create_app(directory=None, *, desktop_token=None):
         account = auth.owner
         semester = store.get(account, "meta", "semester", {})
         courses = [row for row in store.list(account, "course") if row["semester"] == semester.get("id")]
-        courses.sort(key=lambda row: (-row.get("recording_count", 0), row["code"]))
+        courses.sort(key=lambda row: (-row.get("recording_count", 0), str(row.get("code") or "")))
         notices = [{**point, "lesson_id": record["lesson_id"], "course_id": record["course_id"],
                     "course_name": record["course_name"], "lesson_title": record["lesson_title"]}
                    for record in store.list(account, "analysis") for point in record["notices"]]

@@ -22,10 +22,25 @@ let readerLesson = '', readerTab = '', readerSearch = '', readerRange = null, re
 function icon(name, extra='') {return `<img class="ui-icon ${extra}" src="/icons/${esc(name)}.svg" alt="" aria-hidden="true">`;}
 
 async function api(path, options = {}) {
-  const response = await fetch('/api' + path, {...options, headers: {'Content-Type':'application/json','X-BUAA-Local':'1',...options.headers}});
-  const data = await response.json();
-  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : '操作未完成，请检查输入后重试');
+  let response;
+  try {
+    response = await fetch('/api' + path, {...options, headers: {'Content-Type':'application/json','X-BUAA-Local':'1',...options.headers}});
+  } catch {
+    throw new ApiError('无法连接本地服务，请重新打开 BUAA Learn 或重启本地服务后重试。', 0);
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const fallback = response.status >= 500 ? '本地服务处理请求时出错' : '操作未完成';
+    throw new ApiError(typeof data?.detail === 'string' ? data.detail : `${fallback}，请重试（HTTP ${response.status}）`, response.status);
+  }
+  if (!data) throw new ApiError('本地服务返回了无法读取的数据，请重试。', response.status);
   return data;
+}
+class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
 }
 function toast(message) {
   ($('#reader').open?$('#reader'):document.body).appendChild($('#toast'));
@@ -310,6 +325,7 @@ async function renderRoute() {
 }
 async function action(name,id) {
 
+  if(name==='retry-startup'){await initialize();return;}
   if(name==='choose-lesson'){location.hash=homeCourse?courseHref(homeCourse):'#/courses';return;}
   if(name==='suggestion'){homeDraft=id;$('#home-question').value=id;$('#home-form').classList.add('has-question');$('#home-question').focus();return;}
   if(name==='login'){await api('/auth/login',{method:'POST'});toast('请在新开的 Chrome 窗口完成学校登录');await refresh(false);return;}
@@ -379,7 +395,7 @@ document.addEventListener('submit',async event=>{
   }catch(e){toast(e.message);}finally{busy=false;asking=false;form.removeAttribute('aria-busy');if(submit?.isConnected){submit.disabled=false;if(form.id==='chat-form')submit.textContent='提问';if(form.id==='home-form'){submit.innerHTML=icon('arrow-up');submit.setAttribute('aria-label','发送问题');}}}
 });
 
-window.addEventListener('hashchange',()=>{closeReader();courseTab='lessons';renderRoute();});
+window.addEventListener('hashchange',()=>{if(state){closeReader();courseTab='lessons';renderRoute();}});
 $('#reader').addEventListener('cancel',event=>{event.preventDefault();closeReader();});
 $('#reader').addEventListener('click',event=>{if(event.target===$('#reader')){const b=$('#reader').getBoundingClientRect();if(event.clientX<b.left||event.clientX>b.right||event.clientY<b.top||event.clientY>b.bottom)closeReader();}});
 $('#reader-body').addEventListener('scroll',()=>{readerPosition();clearTimeout(readerSaveTimer);readerSaveTimer=setTimeout(rememberReader,150);});
@@ -394,4 +410,16 @@ async function poll() {
     if(signature!==refreshSignature&&!busy&&!editing&&!hasOpenCombobox()&&!(route().page==='automations'&&Object.keys(automationDraft?.changes||{}).length)){refreshSignature=signature;await renderRoute();}
   }catch{ /* Transient server restarts keep the current local view intact. */ }
 }
-try{await refresh();setInterval(poll,3000);}catch(e){renderMain(empty('本地服务未连接','请确认启动服务的终端仍在运行，然后刷新页面。'));}
+async function initialize() {
+  try {
+    await refresh();
+    setInterval(poll,3000);
+  } catch (error) {
+    state = undefined;
+    if (!(error instanceof ApiError)) console.error(error);
+    const title = error.status === 0 ? '本地服务未连接' : '暂时无法加载学习空间';
+    const message = error instanceof ApiError ? error.message : '页面加载失败，请重试。';
+    renderMain(empty(title,message,button('重试','retry-startup')));
+  }
+}
+await initialize();

@@ -53,6 +53,42 @@ def test_courses_sorted_by_recordings_and_active_jobs_not_hidden(tmp_path):
     assert len(result["jobs"]) == 31
 
 
+def test_state_loads_cached_courses_with_missing_or_mixed_codes(tmp_path):
+    app = create_app(tmp_path)
+    store = app.state.store
+    store.set_setting("profile", {"owner": "alice"})
+    store.put("alice", "meta", "semester", {"id": "term"})
+    for course_id, fields in [
+        ("normal", {"code": "CS101"}), ("numeric", {"code": 123}),
+        ("null", {"code": None}), ("legacy", {}),
+    ]:
+        store.put("alice", "course", course_id, {"id": course_id, "semester": "term", **fields})
+    store.close()
+
+    restarted = create_app(tmp_path)
+    with TestClient(restarted, base_url="http://127.0.0.1:8765") as client:
+        response = client.get("/api/state")
+        assert response.status_code == 200
+        assert {course["id"] for course in response.json()["courses"]} == {
+            "normal", "numeric", "null", "legacy",
+        }
+
+
+def test_unexpected_api_failure_returns_safe_json(tmp_path, monkeypatch):
+    app = create_app(tmp_path)
+
+    def fail_enqueue(kind):
+        raise RuntimeError("internal diagnostic")
+
+    monkeypatch.setattr(app.state.auth, "require", lambda: None)
+    monkeypatch.setattr(app.state.service, "enqueue", fail_enqueue)
+    with TestClient(app, base_url="http://127.0.0.1:8765", raise_server_exceptions=False) as client:
+        response = client.post("/api/sync", headers={"X-BUAA-Local": "1"})
+        assert response.status_code == 500
+        assert response.json() == {"detail": "本地服务处理请求时出错，请重试（HTTP 500）"}
+        assert client.get("/api/state").status_code == 200
+
+
 def test_timetable_automation_api_and_worker_complete_one_occurrence(tmp_path, monkeypatch):
     import time
     from datetime import datetime
