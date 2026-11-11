@@ -151,5 +151,3 @@ npm run build
 ## 开源与致谢
 
 项目采用 [MIT License](LICENSE)，第三方组件、字体与图标保留各自许可证，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-学习工作台的组织与视觉布局受到 [HKUDS/DeepTutor](https://github.com/HKUDS/DeepTutor) 启发。本项目独立实现，尚未接入 DeepTutor，不与北航或录播平台存在官方合作关系。
