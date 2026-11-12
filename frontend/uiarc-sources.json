@@ -1,0 +1,14 @@
+{
+  "license": "MIT",
+  "registry": "https://uiarc.dev/r/{name}.json",
+  "items": [
+    "arc-foundation",
+    "arc-motion-tokens",
+    "button",
+    "badge",
+    "empty-state",
+    "input",
+    "alert",
+    "tabs"
+  ]
+}

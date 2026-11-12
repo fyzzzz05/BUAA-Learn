@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from buaa_agent.portal import PortalError, Session
+from buaa_agent.portal import LoginRequired, PortalError, Session
 
 
 def test_portal_token_is_never_forwarded_across_school_hosts():
@@ -39,8 +39,26 @@ def test_redirect_to_unrelated_host_is_rejected():
 
 
 def test_expired_session_without_refresh_requires_login():
-    from buaa_agent.portal import LoginRequired
     client = httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(200, json={"code": 403})))
     session = Session("expired", "", "01", "owner", "同学", client)
     with pytest.raises(LoginRequired):
         session.terms()
+
+
+def test_missing_recording_authorization_fails_before_request():
+    requests = []
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda request: requests.append(request) or httpx.Response(200, json={"code": 0})))
+    session = Session("portal-secret", "", "01", "owner", "同学", client)
+    with pytest.raises(LoginRequired, match="录播授权未完成"):
+        session.classroom("/example")
+    assert not requests
+
+
+def test_rejected_recording_authorization_requires_login_not_resync():
+    client = httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(200, json={"code": 5002})))
+    client.cookies.set("_token", '%7Bi%3A0%3Bs%3A6%3A%22_token%22%3Bi%3A1%3Bs%3A6%3A%22secret%22%3B%7D',
+                       domain=".msa.buaa.edu.cn")
+    session = Session("portal-secret", "", "01", "owner", "同学", client)
+    with pytest.raises(LoginRequired, match="重新登录"):
+        session.classroom("/example")

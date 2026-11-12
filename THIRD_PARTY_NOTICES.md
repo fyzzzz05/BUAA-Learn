@@ -33,3 +33,7 @@ does not replace rights in the classroom content depicted in those screenshots.
 ## 桌面运行环境
 
 桌面安装包包含 Electron（MIT）及其 Chromium、Node.js 等组件；Electron 自带的 LICENSE 与 LICENSES.chromium.html 随应用分发。登录使用 Playwright（Apache-2.0）及其 Chromium / Chrome for Testing 浏览器，浏览器许可证和 notices 保留于随附浏览器目录中。Python 运行环境保留 PSF 许可证；PyInstaller 的 GPL 许可证包含允许分发冻结应用的 bootloader 例外，详见 https://pyinstaller.org/en/stable/license.html。安装包不改变本项目 MIT 许可证。
+
+## Arc UI
+
+The course workspace uses MIT-licensed [Arc UI components](https://github.com/kuratlielia/arc-library), copyright (c) 2026 Elia Kuratli. The [license](buaa_agent/static/LICENSE-UIArc.txt) is bundled with the frontend.

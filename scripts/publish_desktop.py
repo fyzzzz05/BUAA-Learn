@@ -39,7 +39,7 @@ def main():
     checksums = Path("release-assets/SHA256SUMS.txt")
     checksums.write_text("".join(lines), encoding="utf-8")
     notes = Path("release-assets/release-notes.md")
-    notes.write_text(f"""BUAA Learn 首个桌面测试版。安装包内置 Python 服务与登录浏览器，无需安装 Python、Node.js、Ego 或插件。
+    notes.write_text(f"""BUAA Learn {version} 桌面测试版。安装包内置 Python 服务与登录浏览器，无需安装 Python、Node.js、Ego 或插件。
 
 | 系统 | 安装包 |
 | --- | --- |
@@ -49,11 +49,15 @@ def main():
 
 安装后点击 **SSO 登录**；在 **模型与设置** 填写模型，或从菜单 **文件 → 打开配置目录** 编辑 `.env.local` 后重启。课程、笔记及配置保存在本机，安装包不含作者账户、API 密钥或课堂数据。
 
-支持课程同步、课堂时间轴、来源引用、作业与考试/考勤/小测事项整理、课程问答、去重课件 PDF，以及上课次日起每 2 小时检查新回放的自动化。
+- 默认打开课程表，登录后每次进入自动同步调课和教室变更。
+- 更新课程、阅读器、作业和设置界面。课次可直接查看提取的作业与重要事项，并从引文对应时间播放整节回放。
+- 分析超时及临时服务错误会逐段重试。任务状态标签统一对齐，诊断日志记录失败阶段和原因。
+- 模型密钥按服务地址保存，macOS 使用钥匙串，Windows 使用当前用户的 DPAPI。
+- 设置新增应用更新、打开数据目录和打开诊断日志入口。
 
 三种系统构建均通过后端测试、内置 Chromium 启动、冻结环境 PDF 去重导出和实际桌面窗口启动测试。[构建记录]({run['html_url']}) · 源码 `{revision}`。学校 SSO 需要用户本人操作，自动测试不代替各校网环境下的实机登录验证。
 
-当前未配置 Apple Developer ID / 公证或 Windows 代码签名，系统可能显示来源或信誉提示。应用没有自动更新器；下载新版本升级即可，本机学习数据保留。
+当前未配置 Apple Developer ID / 公证或 Windows 代码签名，系统可能显示来源或信誉提示。可在「模型与设置 → 应用更新」检查新版，也可直接下载新版安装包。本机学习数据保留。
 
 macOS 关闭窗口后应用继续运行，⌘Q 退出；Windows 关闭最后一个窗口即退出。自动化需要应用运行且学校登录有效；生成笔记会发送课堂文本至你配置的模型服务，并可能产生调用费用。
 

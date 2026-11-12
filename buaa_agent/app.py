@@ -1,9 +1,11 @@
 import os
+import re
 import secrets
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi import Path as ApiPath
@@ -12,7 +14,7 @@ from pydantic import BaseModel, Field, SecretStr
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .auth import Auth
-from .learning import LearningError, Model, ask
+from .learning import LearningError, Model
 from .materials import time_label
 from .portal import LoginRequired, PortalError
 from .service import Service
@@ -31,11 +33,6 @@ class ModelInput(BaseModel):
     api_key: SecretStr | None = None
 
 
-class QuestionInput(BaseModel):
-    question: str = Field(min_length=2, max_length=3000)
-    lesson_id: str | None = None
-
-
 class TaskInput(BaseModel):
     done: bool
 
@@ -44,8 +41,18 @@ def create_app(directory=None, *, desktop_token=None):
     directory = Path(directory or os.getenv("BUAA_DATA_DIR", "./data")).resolve()
     store = Store(directory)
     auth = Auth(store)
-    model = Model(store)
+    protector = None
+    if desktop_token and sys.platform == "win32":
+        from . import windows_secrets
+
+        protector = windows_secrets
+    elif desktop_token and sys.platform == "darwin":
+        from . import macos_secrets
+
+        protector = macos_secrets
+    model = Model(store, protector)
     service = Service(store, auth, model)
+    auth.on_connected = lambda account: service.enqueue("sync", owner=account)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -56,7 +63,7 @@ def create_app(directory=None, *, desktop_token=None):
         # Workers blocked on an external provider may still finish during process shutdown.
         # SQLite connections are released by process exit after daemon workers terminate.
 
-    app = FastAPI(title="BUAA Learning Agent", version="0.2.0", lifespan=lifespan,
+    app = FastAPI(title="BUAA Learning Agent", version="0.2.4", lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)
     app.state.store, app.state.auth, app.state.service, app.state.model = store, auth, service, model
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]"])
@@ -78,6 +85,7 @@ def create_app(directory=None, *, desktop_token=None):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self'; "
             "img-src 'self' https://resource.msa.buaa.edu.cn; "
+            "media-src https://resource.msa.buaa.edu.cn; "
             "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
         )
         return response
@@ -85,7 +93,7 @@ def create_app(directory=None, *, desktop_token=None):
     if desktop_token:
         @app.get("/api/desktop/health")
         def desktop_health() -> dict:
-            return {"status": "ready", "version": "0.2.0"}
+            return {"status": "ready", "version": "0.2.4", "data_directory": str(store.directory)}
 
         @app.post("/api/desktop/quit")
         def desktop_quit() -> dict:
@@ -102,6 +110,16 @@ def create_app(directory=None, *, desktop_token=None):
     async def model_error(request, exc):
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
+    @app.exception_handler(Exception)
+    async def internal_error(request: Request, exc: Exception):
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(
+                {"detail": "本地服务处理请求时出错，请重试（HTTP 500）"},
+                status_code=500,
+                headers={"Cache-Control": "no-store"},
+            )
+        return Response(status_code=500)
+
     def owner():
         if not auth.owner:
             raise LoginRequired("请先登录北航统一身份认证")
@@ -112,7 +130,7 @@ def create_app(directory=None, *, desktop_token=None):
         account = auth.owner
         semester = store.get(account, "meta", "semester", {})
         courses = [row for row in store.list(account, "course") if row["semester"] == semester.get("id")]
-        courses.sort(key=lambda row: (-row.get("recording_count", 0), row["code"]))
+        courses.sort(key=lambda row: (-row.get("recording_count", 0), str(row.get("code") or "")))
         notices = [{**point, "lesson_id": record["lesson_id"], "course_id": record["course_id"],
                     "course_name": record["course_name"], "lesson_title": record["lesson_title"]}
                    for record in store.list(account, "analysis") for point in record["notices"]]
@@ -121,6 +139,7 @@ def create_app(directory=None, *, desktop_token=None):
         recent = [row for row in jobs if row["status"] not in ("queued", "running")][:30]
         return {"auth": auth.status(), "semester": semester, "courses": courses,
                 "schedule": store.get(account, "meta", "schedule", {"rows": []}),
+                "timetable": service.timetable(account, semester.get("id")),
                 "jobs": active + recent,
                 "automations": store.list(account, "automation"),
                 "tasks": [row for row in store.list(account, "task") if not row.get("superseded")],
@@ -142,10 +161,20 @@ def create_app(directory=None, *, desktop_token=None):
         auth.require()
         return service.enqueue("sync")
 
+    @app.post("/api/recordings/sync", status_code=202)
+    def sync_recordings() -> dict:
+        auth.require()
+        return service.enqueue("recordings")
+
     @app.post("/api/schedule/sync", status_code=202)
     def sync_schedule() -> dict:
         auth.require()
         return service.enqueue("schedule")
+
+    @app.post("/api/timetable/sync", status_code=202)
+    def sync_timetable() -> dict:
+        auth.require()
+        return service.enqueue("timetable")
 
     @app.get("/api/courses/{course_id}")
     def course(course_id: str) -> dict:
@@ -154,8 +183,7 @@ def create_app(directory=None, *, desktop_token=None):
         lessons = [lesson for lesson in store.list(account, "lesson") if lesson["course_id"] == course_id]
         lessons.sort(key=lambda lesson: lesson["date"], reverse=True)
         return {"course": row, "lessons": lessons,
-                "automation": store.get(account, "automation", course_id),
-                "chat": [chat for chat in store.list(account, "chat") if chat["course_id"] == course_id][:20]}
+                "automation": store.get(account, "automation", course_id)}
 
     @app.post("/api/courses/{course_id}/sync", status_code=202)
     def sync_course(course_id: str) -> dict:
@@ -212,24 +240,6 @@ def create_app(directory=None, *, desktop_token=None):
             raise LearningError("请先在设置中配置模型服务")
         return service.enqueue("analyze", lesson_id)
 
-    @app.post("/api/courses/{course_id}/ask")
-    def question(course_id: str, body: QuestionInput) -> dict:
-        account = owner()
-        service.owned_course(account, course_id)
-        lessons = [row for row in store.list(account, "lesson") if row["course_id"] == course_id]
-        if body.lesson_id:
-            lesson = service.owned_lesson(account, body.lesson_id)
-            if lesson["course_id"] != course_id:
-                raise HTTPException(400, "课次不属于当前课程")
-            lessons = [lesson]
-        identifiers = {row["id"] for row in lessons}
-        sources = [row for row in store.list(account, "materials") if row["lesson_id"] in identifiers]
-        answer = ask(model, body.question, sources, lessons)
-        from uuid import uuid4
-        answer.update(id=uuid4().hex, course_id=course_id, question=body.question)
-        store.put(account, "chat", answer["id"], answer)
-        return answer
-
     @app.patch("/api/tasks/{task_id}")
     def task(task_id: str, body: TaskInput) -> dict:
         account = owner()
@@ -243,9 +253,38 @@ def create_app(directory=None, *, desktop_token=None):
     @app.put("/api/model")
     def configure_model(body: ModelInput) -> dict:
         model.configure(body.base_url, body.model,
-                        body.api_key.get_secret_value() if body.api_key is not None else None)
-        store.set_setting("model", {"base_url": model.base_url, "model": model.model})
+                        body.api_key.get_secret_value() if body.api_key is not None else None,
+                        save=True)
         return model.public()
+
+    @app.get("/api/lessons/{lesson_id}/transcript.txt", response_class=Response)
+    def download_transcript(lesson_id: Annotated[str, ApiPath(pattern=r"^[0-9]+$")]) -> Response:
+        account = owner()
+        try:
+            lesson = service.owned_lesson(account, lesson_id)
+        except PortalError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        material = store.get(account, "materials", lesson_id) or {}
+        rows = material.get("segments") or []
+        if not rows:
+            raise HTTPException(404, "暂无课堂文本，请先获取材料")
+
+        title = f"{lesson.get('course_name', '')}-{lesson['title']}"
+        safe_title = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", title).strip(" .")[:90]
+        filename = f"{lesson_id}-{safe_title}-课堂文本.txt"
+        lines = [
+            f"[{time_label(row['start'])}–{time_label(row['end'])}] {row['text']}"
+            for row in rows
+        ]
+        # A UTF-8 BOM also makes Chinese text readable in older Windows editors.
+        content = ("\r\n".join(lines) + "\r\n").encode("utf-8-sig")
+        return Response(content, media_type="text/plain; charset=utf-8", headers={
+            "Content-Disposition": (
+                f'attachment; filename="lesson-{lesson_id}-transcript.txt"; '
+                f"filename*=UTF-8''{quote(filename, safe='')}"
+            ),
+            "Cache-Control": "no-store",
+        })
 
     @app.get("/api/lessons/{lesson_id}/export")
     def export(lesson_id: str) -> Response:

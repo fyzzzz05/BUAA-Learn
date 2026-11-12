@@ -8,10 +8,10 @@
 
 ## 能做什么
 
+- **课程表**：打开应用即显示本周课表，支持切换周次、查看上课时间和地点、进入课程。
 - **课堂笔记与时间轴**：按讲授主题整理内容、知识点和例子，点击时间范围查看对应课堂原文。
 - **作业与重要事项**：提取明确布置的任务，以及老师明确提及的考试提示、考核要求、点名签到、课堂小测和关键安排，保留原文依据。
 - **整课复习重点**：归纳最多 3 条复习建议，帮助回顾本节课的核心难点。
-- **课堂问答**：围绕已获取的课堂文本提问，回答附材料来源。
 - **去重课件 PDF**：按截图画面内容保守去重，保留首次出现顺序，一键导出方便阅读与批注的图片型 PDF。
 - **课程自动化**：批量选择课程，上课次日起每 2 小时检查新回放，可选择仅获取材料或同时生成笔记。
 - **阅读位置记忆**：按账号和课次记住阅读标签、搜索词和滚动位置，下次打开继续阅读。
@@ -38,7 +38,7 @@
 
 macOS 和 Windows 用户可从 [GitHub Releases](https://github.com/fyzzzz05/BUAA-Learn/releases) 下载桌面安装包：Apple Silicon / Intel Mac 使用对应架构的 `.dmg`，Windows x64 使用 `.exe`。安装包内置 Python 服务和登录浏览器，无需安装开发环境。
 
-**0.2.0 桌面测试版下载：** [Apple Silicon Mac](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.0/BUAA-Learn-0.2.0-mac-arm64.dmg) · [Intel Mac](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.0/BUAA-Learn-0.2.0-mac-x64.dmg) · [Windows x64](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.0/BUAA-Learn-0.2.0-win-x64.exe)
+**0.2.4 桌面测试版下载：** [Apple Silicon Mac](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-mac-arm64.dmg) · [Intel Mac](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-mac-x64.dmg) · [Windows x64](https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-win-x64.exe)
 
 首次打开后点击 **SSO 登录**；模型可在 **模型与设置** 配置，或通过菜单 **文件 → 打开配置目录** 编辑 `.env.local` 后重启。配置、课程和笔记保存在本机，安装包不包含作者的 API 密钥或课堂数据。
 
@@ -67,7 +67,7 @@ buaa-agent
 
 如果没有 Chrome，可运行 `python -m playwright install chromium`，在 `.env.local` 中设置 `BUAA_BROWSER_CHANNEL=chromium`；已安装 Edge 的用户可设置为 `msedge`。
 
-未配置模型时仍可登录、同步课程、阅读原文与截图、导出去重 PDF；生成笔记和课堂问答需要模型服务。
+未配置模型时仍可登录、同步课程、阅读原文与截图、导出去重 PDF；生成笔记需要模型服务。
 
 ## 使用流程
 
@@ -75,7 +75,7 @@ buaa-agent
 2. 同步本学期课程和课表，课程按回放数量排序；课表中的课程也可直接点击进入。
 3. 进入课程后同步课次，选择一节有回放的课并获取课堂材料。
 4. 点击 **分析这节课** 生成笔记。顶部和阅读弹窗显示任务进度；分析完成后查看课堂时间轴、作业和重要事项。
-5. 在 **课程问答** 中提问；在 **PPT 截图** 中点击 **导出去重 PDF**，完成后下载；也可以导出包含原文的 Markdown 笔记。
+5. 在 **PPT 截图** 中点击 **导出去重 PDF**，完成后下载；也可以导出包含原文的 Markdown 笔记。
 
 ### 自动整理课程
 
@@ -114,14 +114,13 @@ DeepSeek 官方地址 `https://api.deepseek.com`（也支持 `/v1` 后缀）使�
 - 时间轴按主题展示；超过 45 秒的文本空白，以及尚未归类的文本分别标记。主题整理失败时保留已通过校验的内容并显示部分待整理状态。
 - 无效 JSON、格式或引用校验失败时会有限重试；鉴权、网络和限额错误明确报错，不覆盖已有有效结果。
 - **目前分析基于识别文本，尚未实现 PPT OCR、视觉理解、缺失音频补转写或原声核验。** 文本时间覆盖率不等于识别准确率。
-- 问答使用中英文关键词检索，并非向量或知识图谱检索，可能遗漏相关片段。
 - PDF 保留截图原始分辨率，无损嵌入，不裁切画面；它是截图合集，不是可编辑 PPT，也不包含可搜索文字层。
 - 截图按画面内容保守去重，可合并非相邻重复页，尽量保留局部文字、批注与颜色变化；近似画面仍可能保留，也可能包含桌面或课堂演示。
 - 导出最多并行下载 4 张图，单次最多 1000 张；单图及总量有上限。读取失败会报错，旧的完整导出保留。
 
 ## 数据与登录
 
-课程、课表、识别文本、截图索引、笔记、问答、作业及自动化规则保存在本地 SQLite；导出的 PDF 保存在 `data/exports/`。学校 token、Cookie 和模型密钥不写入数据库。
+课程、课表、识别文本、截图索引、笔记、作业及自动化规则保存在本地 SQLite；导出的 PDF 保存在 `data/exports/`。学校 token、Cookie 和模型密钥不写入数据库。
 
 浏览器使用独立临时资料目录完成 SSO 和录播登录握手，随后通过 HTTP 获取课程材料；不会读取你已有的浏览器资料或自动提交学校作业。学校凭据保留在内存，服务重启后需要重新登录。
 
@@ -141,7 +140,7 @@ ruff check buaa_agent tests
 cd frontend
 npm ci
 npm run typecheck
-npm run build
+npm run build -- --desktop-only
 ```
 
 构建后的 JavaScript 和 CSS 输出到 `buaa_agent/static/`，由本地服务提供。前端组件来源与校验记录见 `frontend/*-sources.json`；主要结构和接口见 [docs/architecture.md](docs/architecture.md)。

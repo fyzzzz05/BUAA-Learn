@@ -1,0 +1,54 @@
+.shell, #reader {
+  --accent: #315f85;
+  --accent-strong: #254966;
+  --accent-subtle: #eaf2f8;
+  --focus-outline: #4f7ea2;
+  --text-sm: 13px;
+  --text-xs: 11px;
+  --radius-control: 8px;
+  --font-sans: Geist, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+[data-arc="button"], [data-arc="badge"] {display: inline-flex; vertical-align: middle; max-width: 100%}
+[data-arc="button"] button {white-space: nowrap}
+[data-arc="button"][data-variant="primary"], #course-workspace .tt-heading-actions > button {
+  --foreground: #315f85;
+}
+[data-arc="button"] svg {width: 15px; height: 15px; flex: none}
+[data-arc="button"][data-icon-only="true"] button {width: 32px; height: 32px; min-height: 32px; padding: 0}
+.arc-alert {margin-bottom: 18px}
+.arc-empty-frame {border: 1px solid #dfe7ee; border-radius: 12px; background: #fff; padding-bottom: 20px}
+.arc-empty-frame .actions {justify-content: center}
+.arc-empty-frame:not(:has(.actions > *)) {padding-bottom: 0}
+.workspace main > .page-heading h1,
+.workspace main > .automation-page .page-heading h1 {
+  color: #253543;
+  font-size: clamp(23px, 2.7vw, 31px);
+  font-weight: 650;
+}
+.workspace .panel, #reader {border-color: #dfe7ee}
+.workspace .panel-head {border-color: #e6edf3; background: #fbfcfe}
+.workspace .lesson-item.active {background: #eaf2f8; color: #244865}
+.workspace .lesson-item:hover {background: #f3f7fb}
+.workspace .lesson-item [data-arc="badge"] {margin-top: 4px}
+.arc-settings {max-width: 720px}
+.arc-settings .form-grid {gap: 18px}
+.arc-settings .arc-alert {margin: 0}
+.arc-settings .form-grid [data-arc="input"] input {font: inherit}
+.reader-arc-tabs {flex: none; min-width: 0; padding: 0 20px 10px; border-bottom: 1px solid #e6edf3}
+.reader-arc-tabs [role="tab"] {white-space: nowrap}
+.reader-arc-search {width: min(280px, 100%); min-width: 0}
+.reader-arc-search label {position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
+.arc-notice-row + .arc-notice-row {border-top: 1px solid #e6edf3}
+@media (max-width: 600px) {
+  .reader-arc-tabs {padding-inline: 12px}
+  .reader-arc-search {flex-basis: 100%}
+  #reader .inline-heading:has(.reader-arc-search) {flex-wrap: wrap}
+}
+.arc-automation-search {width: min(280px, 100%)}
+.arc-automation-search label {position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
+.workspace .automation-toolbar .arc-automation-search input {width: 100%}
+.workspace .automation-save-actions button {border-radius: 9px}
+.workspace .automation-save-actions button:last-child {background: #315f85; border-color: #315f85}
+.workspace .automation-save-actions button:last-child:hover:not(:disabled) {background: #254966; border-color: #254966}
+.arc-settings input[type="password"] {font-family: inherit}
+.arc-empty-frame .actions:empty {display:none}

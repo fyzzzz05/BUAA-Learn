@@ -33,3 +33,12 @@ await build({entryPoints:['src/features/navigation/mount.tsx'],outfile:'../buaa_
 execFileSync(process.execPath,['node_modules/@tailwindcss/cli/dist/index.mjs','-i','src/navigation.css','-o','../buaa_agent/static/navigation.css','--minify'],{stdio:'inherit'})
 await build({entryPoints:['src/features/automations/mount.tsx'],outfile:'../buaa_agent/static/automations.js',bundle:true,format:'esm',platform:'browser',target:'es2022',jsx:'automatic',minify:true,legalComments:'eof',define:{'process.env.NODE_ENV':'"production"'}})
 await copyFile('src/features/automations/style.css','../buaa_agent/static/automations.css')
+
+await build({
+  entryPoints:['src/apps/desktop/workspace.ts'],
+  outfile:'../buaa_agent/static/course-workspace.js',
+  bundle:true, format:'esm', platform:'browser', target:'es2022',
+  jsx:'automatic', minify:true, legalComments:'eof',
+  define:{'process.env.NODE_ENV':'"production"'},
+})
+await copyFile('src/shared/ui/arc/LICENSE','../buaa_agent/static/LICENSE-UIArc.txt')
