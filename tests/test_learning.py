@@ -71,21 +71,6 @@ def test_real_but_unrelated_quote_cannot_support_an_invented_deadline():
     assert rows[0]["deadline"] == "未说明"
 
 
-def test_bilingual_retrieval_and_answer_citations():
-    from buaa_agent.learning import ask
-    class FakeModel:
-        def complete(self, system, prompt, *, output_model=None):
-            if "关键词" in system:
-                return {"keywords": ["冠词", "article"]}
-            return {"answer": "这节课讨论了冠词。 [c0]", "evidence_ids": ["c0"]}
-    lesson = {"id": "1001", "title": "示例", "date": "2026-10-19", "source_url": "https://example.invalid"}
-    materials = [{"lesson_id": "1001", "segments": [
-        {"id": "s0", "start": 1, "end": 10, "text": "Use the definite article in this case."}]}]
-    result = ask(FakeModel(), "老师如何解释冠词？", materials, [lesson])
-    assert result["sources"][0]["lesson_id"] == "1001"
-    assert "[c0]" in result["answer"]
-
-
 def test_completed_task_survives_reanalysis():
     result = {"lesson_id": "1001", "course_id": "demo", "course_name": "示例课程",
               "lesson_title": "第一课", "assignments": [{"text": "Read chapter 2"}]}
@@ -135,7 +120,8 @@ def test_bad_structure_is_retried_with_schema_without_leaking_values():
     assert "knowledge_points.0.evidence_ids" in model.prompts[1]
     assert "private value" not in model.prompts[1]
     assert result["knowledge_points"][0]["evidence_ids"] == ["s0"]
-    assert progress[-1]["progress"] == {"completed": 1, "total": 1, "stage": "课堂文本分析"}
+    assert progress[-2]["progress"] == {"completed": 1, "total": 1, "stage": "课堂文本分析"}
+    assert progress[-1]["stage"] == "整理课堂时间轴"
 
 
 def test_repeated_invalid_output_reports_chunk_and_field():

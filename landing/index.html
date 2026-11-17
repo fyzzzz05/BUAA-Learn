@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BUAA Learn 帮北航同学快速回顾课堂内容，按时间轴定位知识点，补看错过的课和作业。">
+  <meta name="theme-color" content="#f4f5ef">
+  <title>BUAA Learn｜你的课后学习助手</title>
+  <link rel="stylesheet" href="style.css?v=motion-v2">
+  <script type="module" src="demo.js?v=motion-v2"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell nav">
+      <a class="brand" href="./">BUAA Learn</a>
+      <nav aria-label="主导航"><a href="#demo">课堂演示</a><a href="#workflow">复习场景</a></nav>
+      <a class="nav-download" href="#download">下载桌面版 <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main>
+    <section class="hero shell" aria-labelledby="title">
+      <div class="hero-copy">
+      <p class="eyebrow">BUAA Learn / 课堂自动化助手</p>
+      <h1 id="title">下课之后，<br>重点都在。</h1>
+      <p class="intro">快速看懂这节课讲了什么。想重听某个知识点，就从老师讲到的那一分钟开始。</p>
+      <div class="actions"><a class="button primary" href="#download">下载桌面版 <span aria-hidden="true">↗</span></a><a class="button secondary" href="#demo">试一节示例课 <span aria-hidden="true">↗</span></a></div>
+      </div>
+      <section id="demo" class="demo" aria-label="示例课堂工作台">
+        <div class="window-bar"><span>示例课堂</span><span class="sample">第 4 讲 · 图像理解与多模态</span></div>
+        <div class="window-body">
+          <div class="workspace">
+            <div class="workspace-head"><h2>计算机视觉导论</h2><span class="ready"><i></i>笔记已生成</span></div>
+            <div class="tabs" aria-label="课堂材料">
+              <button type="button" aria-pressed="true" data-view="notes">时间轴笔记</button>
+              <button type="button" aria-pressed="false" data-view="tasks">作业与事项</button>
+              <button type="button" aria-pressed="false" data-view="source">课堂原话</button>
+            </div>
+            <div id="demo-content" class="demo-content" aria-live="polite">
+              <button type="button" class="entry" data-source="0"><time>00:07:34</time><span><strong>分类、检测与分割</strong><small>对比整图分类、像素分割和目标检测。</small></span><span class="jump" aria-hidden="true">↗</span></button>
+              <button type="button" class="entry" data-source="1"><time>00:12:56</time><span><strong>多模态如何理解图像</strong><small>用图文检索理解图像与语言如何对齐。</small></span><span class="jump" aria-hidden="true">↗</span></button>
+              <button type="button" class="entry" data-source="2"><time>00:14:15</time><span><strong>视觉 Transformer</strong><small>把图像切成小块，用注意力学习它们之间的关系。</small></span><span class="jump" aria-hidden="true">↗</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+    <section id="workflow" class="shell workflow">
+      <div class="gallery-head"><h2 id="case-title">一节课，重新变得清楚。</h2><span class="example-label">示例课堂</span></div>
+      <div class="scene-tabs" aria-label="选择演示场景">
+        <button aria-pressed="true" data-scene="review">回顾课堂</button>
+        <button aria-pressed="false" data-scene="knowledge">定位知识点</button>
+        <button aria-pressed="false" data-scene="homework">补看作业</button>
+      </div>
+      <div class="cinema" id="review-demo">
+        <div class="film-stage">
+          <div class="film-window">
+            <div class="film-bar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>BUAA Learn</span><span class="film-course">计算机视觉导论</span></div>
+            <div class="film-body">
+              <aside class="film-sidebar"><b>课程目录</b><span>第 3 讲<small>图像特征与表示</small></span><span class="selected">第 4 讲<small>图像理解与多模态</small><em>笔记已生成</em></span><span>第 5 讲<small>从检索到生成</small></span></aside>
+              <div class="film-content" id="film-content"></div>
+            </div>
+          </div>
+          <div class="film-pointer" aria-hidden="true"><svg width="24" height="30" viewBox="0 0 24 30"><path d="M3 2L21 18L13 19L17 27L12 29L8 21L3 26Z" fill="#172b46" stroke="white" stroke-width="2"/></svg></div>
+          <span class="film-click" aria-hidden="true"></span>
+        </div>
+        <div class="film-footer"><p id="film-caption">沿着时间轴，找回这一节课的脉络。</p><button id="film-play" type="button">播放演示 <span aria-hidden="true">▷</span></button></div>
+        <div class="film-progress" aria-hidden="true"><i></i></div>
+      </div>
+    </section>
+    <section id="download" class="shell download">
+      <div><h2>下载 BUAA Learn</h2><p>桌面测试版 0.2.4</p></div>
+      <ul>
+        <li><a href="https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-mac-arm64.dmg">macOS · Apple Silicon <span aria-hidden="true">↓</span></a></li>
+        <li><a href="https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-mac-x64.dmg">macOS · Intel <span aria-hidden="true">↓</span></a></li>
+        <li><a href="https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-win-x64.exe">Windows · x64 <span aria-hidden="true">↓</span></a></li>
+      </ul>
+      <p class="detail">用北航 SSO 登录。开启课程自动化后，应用会在运行时检查新回放。生成笔记时，课堂文本会发送到你配置的模型服务，并可能产生调用费用。</p>
+    </section>
+  </main>
+  <footer class="shell footer"><span>BUAA Learn · 非北航官方应用</span><a href="https://github.com/fyzzzz05/BUAA-Learn">GitHub ↗</a></footer>
+</body>
+</html>

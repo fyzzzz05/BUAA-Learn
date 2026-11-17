@@ -17,6 +17,7 @@ class Auth:
         self.lock = threading.RLock()
         self.cancel = threading.Event()
         self.thread = None
+        self.on_connected = None
 
     @property
     def owner(self):
@@ -25,7 +26,27 @@ class Auth:
     def status(self):
         with self.lock:
             return {"state": self.state, "message": self.message,
-                    "logged_in": self.session is not None, "profile": self.profile}
+                    "logged_in": self.session is not None, "profile": self.profile,
+                    "recording_authorized": bool(self.session and self.session.recording_token())}
+
+    def _connected(self, session, owner, name):
+        with self.lock:
+            if self.cancel.is_set():
+                session.client.close()
+                return
+            if self.session:
+                self.session.client.close()
+            self.session = session
+            self.profile = {"owner": owner, "name": name}
+            self.store.set_setting("profile", self.profile)
+            self.state = "connected"
+            self.message = ("已连接教学空间与录播系统" if session.recording_token()
+                            else "已连接教学空间；录播授权未完成，请重新登录重试")
+            if self.on_connected:
+                try:
+                    self.on_connected(owner)
+                except Exception:
+                    self.message += "；课程同步未能启动，请手动同步课程"
 
     def start(self):
         with self.lock:
@@ -95,7 +116,7 @@ class Auth:
                                     cookies = context.cookies()
                                     for cookie in cookies:
                                         domain = cookie["domain"].lstrip(".")
-                                        if domain == "msa.buaa.edu.cn" or domain.endswith(".msa.buaa.edu.cn"):
+                                        if domain == "buaa.edu.cn" or domain == "msa.buaa.edu.cn" or domain.endswith(".msa.buaa.edu.cn"):
                                             session.client.cookies.set(cookie["name"], cookie["value"],
                                                                        domain=cookie["domain"], path=cookie["path"])
                                     if session.recording_token():
@@ -106,22 +127,13 @@ class Auth:
                             except Exception:
                                 # A course without recordings must not invalidate portal login.
                                 continue
-                        with self.lock:
-                            if self.cancel.is_set():
-                                session.client.close()
-                                return
-                            if self.session:
-                                self.session.client.close()
-                            self.session = session
-                            self.profile = {"owner": owner, "name": data["name"]}
-                            self.store.set_setting("profile", self.profile)
-                            self.state = "connected"
-                            self.message = ("已连接教学空间与录播系统" if session.recording_token()
-                                            else "已连接教学空间；录播授权未完成，可重新登录重试")
+                        self._connected(session, owner, data["name"])
                     finally:
                         context.close()
         except Exception as exc:
             with self.lock:
+                if self.cancel.is_set():
+                    return
                 self.state = "error"
                 # Never forward Playwright exception text: it may contain callback query tokens.
                 self.message = str(exc) if isinstance(exc, ValueError) else (

@@ -1,0 +1,19 @@
+{
+  "properties": {
+    "answer": {
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "answer",
+    "evidence_ids"
+  ],
+  "type": "object",
+  "additionalProperties": false
+}

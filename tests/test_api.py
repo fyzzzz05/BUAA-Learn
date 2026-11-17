@@ -21,6 +21,21 @@ def test_cached_account_cannot_read_another_accounts_lessons(tmp_path):
         assert client.get("/api/lessons/1001").status_code == 502
 
 
+def test_recording_sync_api_queues_one_task_for_current_account(tmp_path):
+    app = create_app(tmp_path)
+    app.state.auth.profile = {"owner": "alice"}
+    app.state.auth.require = lambda: None
+    client = TestClient(app, base_url="http://127.0.0.1:8765")
+    headers = {"X-BUAA-Local": "1"}
+    response = client.post("/api/recordings/sync", headers=headers)
+    assert response.status_code == 202
+    job = response.json()
+    assert job["kind"] == "recordings" and job["status"] == "queued"
+    assert client.post("/api/recordings/sync", headers=headers).json()["id"] == job["id"]
+    assert app.state.service.queue.qsize() == 1
+    assert app.state.store.get("alice", "job", job["id"]) == job
+
+
 def test_settings_do_not_return_or_persist_api_keys(tmp_path):
     app = create_app(tmp_path)
     with TestClient(app, base_url="http://127.0.0.1:8765") as client:
@@ -51,6 +66,42 @@ def test_courses_sorted_by_recordings_and_active_jobs_not_hidden(tmp_path):
     assert [c["id"] for c in result["courses"]] == ["B", "C", "A"]
     assert result["jobs"][0]["id"] == "active"
     assert len(result["jobs"]) == 31
+
+
+def test_state_loads_cached_courses_with_missing_or_mixed_codes(tmp_path):
+    app = create_app(tmp_path)
+    store = app.state.store
+    store.set_setting("profile", {"owner": "alice"})
+    store.put("alice", "meta", "semester", {"id": "term"})
+    for course_id, fields in [
+        ("normal", {"code": "CS101"}), ("numeric", {"code": 123}),
+        ("null", {"code": None}), ("legacy", {}),
+    ]:
+        store.put("alice", "course", course_id, {"id": course_id, "semester": "term", **fields})
+    store.close()
+
+    restarted = create_app(tmp_path)
+    with TestClient(restarted, base_url="http://127.0.0.1:8765") as client:
+        response = client.get("/api/state")
+        assert response.status_code == 200
+        assert {course["id"] for course in response.json()["courses"]} == {
+            "normal", "numeric", "null", "legacy",
+        }
+
+
+def test_unexpected_api_failure_returns_safe_json(tmp_path, monkeypatch):
+    app = create_app(tmp_path)
+
+    def fail_enqueue(kind):
+        raise RuntimeError("internal diagnostic")
+
+    monkeypatch.setattr(app.state.auth, "require", lambda: None)
+    monkeypatch.setattr(app.state.service, "enqueue", fail_enqueue)
+    with TestClient(app, base_url="http://127.0.0.1:8765", raise_server_exceptions=False) as client:
+        response = client.post("/api/sync", headers={"X-BUAA-Local": "1"})
+        assert response.status_code == 500
+        assert response.json() == {"detail": "本地服务处理请求时出错，请重试（HTTP 500）"}
+        assert client.get("/api/state").status_code == 200
 
 
 def test_timetable_automation_api_and_worker_complete_one_occurrence(tmp_path, monkeypatch):
@@ -86,3 +137,17 @@ def test_timetable_automation_api_and_worker_complete_one_occurrence(tmp_path, m
             time.sleep(.02)
         assert rule["pending_count"] == 0 and rule["next_run"] is None
         assert calls == [("alice", "1001")]
+
+
+def test_removed_course_questions_are_no_longer_served(tmp_path):
+    app = create_app(tmp_path)
+    app.state.auth.profile = {"owner": "alice"}
+    store = app.state.store
+    store.put("alice", "course", "demo", {"id": "demo"})
+    store.put("alice", "chat", "old", {"course_id": "demo", "question": "private history"})
+    client = TestClient(app, base_url="http://127.0.0.1:8765")
+    response = client.get("/api/courses/demo")
+    assert response.status_code == 200 and "chat" not in response.json()
+    assert client.post("/api/courses/demo/ask", headers={"X-BUAA-Local": "1"},
+                       json={"question": "new question"}).status_code in (404, 405)
+    assert store.get("alice", "chat", "old")["question"] == "private history"

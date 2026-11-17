@@ -1,0 +1,132 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "knowledge_points": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "text",
+          "evidence_ids"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "assignments": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "deadline": {
+            "type": "string"
+          },
+          "deadline_quote": {
+            "type": "string"
+          },
+          "audience": {
+            "type": "string"
+          },
+          "submission": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence_ids",
+          "deadline",
+          "deadline_quote",
+          "audience",
+          "submission"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "notices": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "text",
+          "evidence_ids"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "review_suggestions": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "topics": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "start_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "start_id"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "covered_until_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary",
+    "knowledge_points",
+    "assignments",
+    "notices",
+    "review_suggestions",
+    "topics",
+    "covered_until_id"
+  ],
+  "type": "object"
+}

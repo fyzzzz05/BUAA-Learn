@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RootNamespace>BUAALearn.App</RootNamespace>
+    <AssemblyName>BUAALearn.Probe</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Workspace/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
+    <ProjectReference Include="../BUAALearn.Platform/BUAALearn.Platform.csproj" />
+    <Content Include="../../core/target/x86_64-pc-windows-msvc/release/buaa_core.dll" Link="buaa_core.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CheckWorkspaceAssets" BeforeTargets="Build">
+    <Error Condition="!Exists('$(MSBuildProjectDirectory)/Workspace/index.html')" Text="Build workspace assets first: cd frontend; npm ci; npm run build:windows." />
+  </Target>
+</Project>

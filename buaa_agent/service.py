@@ -1,12 +1,26 @@
 import hashlib
+import logging
 import queue
 import threading
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
+from pathlib import Path
+from traceback import extract_tb
 
 from . import learning, materials, replay_schedule, slide_export
 from .portal import LoginRequired, PortalError
 from .store import now
+
+
+# Teaching weeks from the same BUAA calendar used by the native timetable.
+TEACHING_TERMS = {
+    "2026-20271": (date(2026, 9, 7), 19),
+    "2026-20272": (date(2027, 3, 1), 18),
+    "2026-20273": (date(2027, 7, 5), 8),
+}
+
+
+logger = logging.getLogger(__name__)
 
 
 class Service:
@@ -62,17 +76,37 @@ class Service:
             job = self.store.get(owner, "job", identifier)
             try:
                 self._update(owner, job, status="running", message="正在处理", started_at=now())
-                self._execute(owner, job)
-                self._update(owner, job, status="completed", message="处理完成", finished_at=now())
+                message = self._execute(owner, job)
+                self._update(owner, job, status="completed", message=message or "处理完成",
+                             finished_at=now())
             except LoginRequired as exc:
+                self._log_job_failure(job, "needs_login", exc, reason=str(exc))
                 self._update(owner, job, status="needs_login", message=str(exc), finished_at=now())
             except (PortalError, learning.LearningError) as exc:
+                self._log_job_failure(job, "failed", exc, reason=str(exc) if isinstance(exc, learning.LearningError) or job["kind"] == "analyze" else None)
                 self._update(owner, job, status="failed", message=str(exc), finished_at=now())
-            except Exception:
+            except Exception as exc:
+                self._log_job_failure(job, "failed", exc)
                 self._update(owner, job, status="failed", message="任务未完成，原始记录已保留，请重试",
                              finished_at=now())
             finally:
                 self.queue.task_done()
+
+    def _log_job_failure(self, job, status, error, *, reason=None):
+        progress = job.get("progress") or {}
+        stage = job.get("stage") or progress.get("stage") or "准备任务"
+        counts = ""
+        if stage == "课堂文本分析":
+            counts = f" completed={progress['completed']}/{progress['total']}"
+        if reason is None:
+            frames = extract_tb(error.__traceback__)
+            reason = "任务执行异常"
+            if frames:
+                frame = frames[-1]
+                reason += f" ({Path(frame.filename).name}:{frame.lineno}, {frame.name})"
+        logger.warning("%s job=%s id=%s status=%s stage=%s%s error=%s reason=%s",
+                       replay_schedule.local_now().isoformat(), job["kind"], job["id"], status,
+                       stage, counts, type(error).__name__, " ".join(reason.split())[:500])
 
     def _update(self, owner, job, **changes):
         job.update(changes)
@@ -126,6 +160,35 @@ class Service:
             self.store.put(owner, "lesson", lesson["id"], {**old, **lesson})
         return lessons
 
+    def sync_recordings(self, owner, progress):
+        self._session(owner)
+        semester = self.store.get(owner, "meta", "semester", {}).get("id")
+        if not semester:
+            raise PortalError("请先同步本学期课程")
+        courses = [row for row in self.store.list(owner, "course")
+                   if row.get("semester") == semester]
+        failures = []
+        added = 0
+        for index, course in enumerate(courses):
+            progress({"message": f"正在同步 {course.get('name', course['id'])}",
+                      "progress": {"completed": index, "total": len(courses), "unit": "门"}})
+            known = {row["id"] for row in self.store.list(owner, "lesson")
+                     if row["course_id"] == course["id"] and row.get("has_recording")}
+            try:
+                lessons = self.sync_course(owner, course["id"])
+            except LoginRequired:
+                raise
+            except PortalError:
+                failures.append(course.get("name", course["id"]))
+                continue
+            added += sum(bool(row.get("has_recording")) and row["id"] not in known
+                         for row in lessons)
+        progress({"progress": {"completed": len(courses), "total": len(courses), "unit": "门"}})
+        summary = f"已同步 {len(courses) - len(failures)} 门课程，新增 {added} 节回放。"
+        if failures:
+            raise PortalError(summary + "以下课程同步失败，请重试：" + "、".join(failures))
+        return summary
+
     def fetch_materials(self, owner, identifier):
         lesson = self.owned_lesson(owner, identifier)
         if not lesson["has_recording"]:
@@ -146,9 +209,10 @@ class Service:
             raise learning.LearningError("请先在设置中配置模型服务")
         data = self.store.get(owner, "materials", identifier)
         if not data:
-            progress("正在获取课堂文本和 PPT 索引")
+            progress({"message": "正在获取课堂文本和 PPT 索引", "stage": "获取课堂材料"})
             data = self.fetch_materials(owner, identifier)
         result = learning.analyze(self.model, lesson, data, progress)
+        progress({"message": "正在保存学习笔记", "stage": "保存笔记"})
         self.store.put(owner, "analysis", identifier, result)
         previous = {row["id"]: row for row in self.store.list(owner, "task")}
         new_tasks = learning.task_records(result, previous)
@@ -165,11 +229,18 @@ class Service:
     def _execute(self, owner, job):
         kind, target = job["kind"], job["target"]
         def progress(text):
-            self._update(owner, job, **(text if isinstance(text, dict) else {"message": text}))
+            update = text if isinstance(text, dict) else {"message": text}
+            if "progress" in update and "stage" in update["progress"]:
+                update = {**update, "stage": update["progress"]["stage"]}
+            self._update(owner, job, **update)
         if kind == "sync":
             self.sync_semester(owner)
+        elif kind == "recordings":
+            return self.sync_recordings(owner, progress)
         elif kind == "schedule":
             self.sync_timetable(owner)
+        elif kind == "timetable":
+            self.sync_semester_timetable(owner, progress)
         elif kind == "course":
             self.sync_course(owner, target)
         elif kind == "materials":
@@ -221,6 +292,43 @@ class Service:
             "synced_at": now()})
         for rule in self.store.list(owner, "automation"):
             self._plan_automation(owner, rule["course_id"])
+
+    def timetable(self, owner, semester):
+        cached = self.store.get(owner, "meta", "semester_schedule", {})
+        term = TEACHING_TERMS.get(semester)
+        if cached.get("semester") == semester and "rows" in cached:
+            return {**cached, "complete": True}
+        recent = self.store.get(owner, "meta", "automation_schedule", {})
+        weekly = self.store.get(owner, "meta", "schedule", {})
+        return {"start": term[0].isoformat() if term else None,
+                "weeks": term[1] if term else None,
+                "rows": recent.get("rows", weekly.get("rows", [])), "complete": False,
+                "synced_at": recent.get("synced_at") or weekly.get("synced_at")}
+
+    def sync_semester_timetable(self, owner, progress):
+        semester = self.store.get(owner, "meta", "semester", {}).get("id")
+        if not semester:
+            self.sync_semester(owner)
+            semester = self.store.get(owner, "meta", "semester", {}).get("id")
+            if semester not in TEACHING_TERMS:
+                return  # sync_semester already refreshed the rolling cache.
+        term = TEACHING_TERMS.get(semester)
+        if not term:
+            self.sync_timetable(owner)
+            return
+        session = self._session(owner)
+        start, weeks = term
+        days = weeks * 7
+        rows = []
+        for offset in range(0, days, 28):
+            first = (start + timedelta(days=offset)).isoformat()
+            last = (start + timedelta(days=min(offset + 27, days - 1))).isoformat()
+            progress(f"正在同步第 {offset // 7 + 1}–{min(offset // 7 + 4, weeks)} 周课表")
+            rows.extend(row for row in session.schedule(first, last)
+                        if first <= (row.get("date") or "") <= last)
+        self.store.put(owner, "meta", "semester_schedule", {
+            "semester": semester, "start": start.isoformat(), "weeks": weeks,
+            "rows": rows, "synced_at": now()})
 
     def _schedule_rows(self, owner):
         rolling = self.store.get(owner, "meta", "automation_schedule", {})

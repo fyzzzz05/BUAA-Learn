@@ -140,15 +140,17 @@ class Session:
 
     def classroom(self, path, params=None, host=CLASSROOM):
         with self.lock:
+            token = self.recording_token()
+            if not token:
+                raise LoginRequired("录播授权未完成，请重新登录并等待录播系统连接")
             try:
-                token = self.recording_token()
                 response = self.client.get(host + path, params=params,
-                                           headers={"Authorization": "Bearer " + token} if token else {})
+                                           headers={"Authorization": "Bearer " + token})
                 body = response.json()
             except (httpx.HTTPError, ValueError):
                 raise PortalError("课堂材料接口暂时不可用") from None
             if response.status_code in (401, 403) or body.get("code") in (401, 403, 5002):
-                raise LoginRequired("录播系统登录已过期，请重新同步课程")
+                raise LoginRequired("录播系统未接受授权或授权已过期，请重新登录")
             return body
 
     def recording_token(self):

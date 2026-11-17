@@ -1,0 +1,1 @@
+{"additionalProperties": false, "properties": {"notice_indices": {"items": {"type": "integer"}, "title": "Notice Indices", "type": "array"}, "review_suggestions": {"items": {"type": "string"}, "maxItems": 3, "title": "Review Suggestions", "type": "array"}}, "title": "LessonPriorities", "type": "object"}

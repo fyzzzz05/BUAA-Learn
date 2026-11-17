@@ -1,0 +1,36 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "topics": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "start_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "start_id"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "covered_until_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "topics",
+    "covered_until_id"
+  ],
+  "type": "object"
+}

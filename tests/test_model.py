@@ -7,12 +7,9 @@ import pytest
 from pydantic import ValidationError
 
 from buaa_agent.learning import (
-    Answer,
     Extraction,
-    Keywords,
     LearningError,
     Model,
-    ask,
     extract_chunk,
 )
 
@@ -36,7 +33,7 @@ def response_output(payload, **extra):
 
 @pytest.mark.parametrize("base", ["https://api.deepseek.com", "https://api.deepseek.com/v1/"])
 def test_deepseek_sends_schema_and_reads_only_final_output(model, monkeypatch, base):
-    model.configure(base, "deepseek-flash")
+    model.configure(base, "deepseek-flash", "synthetic-key")
     captured = {}
     def post(url, **kwargs):
         captured.update(url=url, **kwargs)
@@ -107,20 +104,115 @@ def test_schema_request_error_does_not_silently_fall_back(model, monkeypatch):
     assert calls == ["https://api.deepseek.com/responses"]
 
 
-def test_all_learning_requests_supply_their_output_contract():
+def test_classroom_analysis_supplies_its_output_contract():
     seen = []
     def complete(system, prompt, *, output_model):
         seen.append(output_model)
-        return {
-            Extraction: {"summary": "synthetic", "topics": [{
-                "title": "synthetic", "summary": "synthetic", "start_id": "s0"}], "covered_until_id": "s0"},
-            Keywords: {"keywords": ["article"]},
-            Answer: {"answer": "冠词 [c0]", "evidence_ids": ["c0"]},
-        }[output_model]
+        return {"summary": "synthetic", "topics": [{
+            "title": "synthetic", "summary": "synthetic", "start_id": "s0"}], "covered_until_id": "s0"}
+
     model = SimpleNamespace(complete=complete)
     extract_chunk(model, "source", {"s0": {"text": "article", "start": 1, "end": 2}}, lambda _: None)
-    materials = [{"lesson_id": "1001", "segments": [
-        {"id": "s0", "start": 1, "end": 2, "text": "article"}]}]
-    lessons = [{"id": "1001", "title": "synthetic", "date": "2026-10-22", "source_url": "https://example.invalid"}]
-    assert ask(model, "article", materials, lessons)["answer"] == "冠词 [c0]"
-    assert seen == [Extraction, Keywords, Answer]
+    assert seen == [Extraction]
+
+
+def test_key_is_kept_only_for_the_same_endpoint(model, monkeypatch):
+    model.configure("https://api.deepseek.com/", "updated-model")
+    assert model.public()["has_key"]
+    model.configure("https://other.example.invalid/v1", "other-model")
+
+    def post(url, **kwargs):
+        assert url == "https://other.example.invalid/v1/chat/completions"
+        assert "Authorization" not in kwargs["headers"]
+        return httpx.Response(200, json={"choices": [{
+            "finish_reason": "stop", "message": {"content": '{"summary":"synthetic"}'}}]})
+
+    monkeypatch.setattr("buaa_agent.learning.httpx.post", post)
+    assert model.complete("system", "synthetic") == {"summary": "synthetic"}
+
+
+def test_blank_environment_preserves_settings_and_unscoped_key_is_ignored(monkeypatch):
+    monkeypatch.setenv("BUAA_LLM_BASE_URL", "")
+    monkeypatch.setenv("BUAA_LLM_MODEL", "")
+    monkeypatch.setenv("BUAA_LLM_API_KEY", "synthetic-unscoped-key")
+    store = SimpleNamespace(setting=lambda *_: {"base_url": "https://saved.example.invalid/v1", "model": "saved"})
+    model = Model(store)
+    assert model.ready and model.model == "saved" and not model.public()["has_key"]
+    monkeypatch.setenv("BUAA_LLM_BASE_URL", "https://env.example.invalid/v1/")
+    model = Model(store)
+    assert model.base_url == "https://env.example.invalid/v1" and model.public()["has_key"]
+
+
+def test_protected_key_persistence_and_removal(tmp_path, monkeypatch):
+    from buaa_agent.store import Store
+
+    monkeypatch.setenv("BUAA_LLM_BASE_URL", "https://example.invalid/v1")
+    monkeypatch.setenv("BUAA_LLM_API_KEY", "environment-fallback")
+    endpoint = "https://example.invalid/v1"
+
+    def protect(value, address):
+        assert value == "synthetic-key" and address == endpoint
+        return "protected-test-token"
+
+    def unprotect(value, address):
+        assert value == "protected-test-token" and address == endpoint
+        return "synthetic-key"
+
+    protector = SimpleNamespace(protect=protect, unprotect=unprotect)
+    store = Store(tmp_path)
+    model = Model(store, protector)
+    model.configure(endpoint + "/", "example", "synthetic-key", save=True)
+    assert model.public()["key_state"] == "saved"
+    assert store.setting("model")["protected_keys"] == {endpoint: "protected-test-token"}
+    assert "synthetic-key" not in json.dumps(model.public())
+    store.close()
+
+    store = Store(tmp_path)
+    model = Model(store, protector)
+    assert model.key == "synthetic-key"
+    model.configure("https://other.invalid/v1", "other", save=True)
+    assert not model.public()["has_key"]
+    model.configure(endpoint, "example", save=True)
+    assert model.key == "synthetic-key"
+
+    def fail(*args):
+        raise OSError("synthetic encryption failure")
+
+    protector.protect = fail
+    with pytest.raises(LearningError, match="原有配置已保留"):
+        model.configure(endpoint, "changed", "replacement", save=True)
+    assert model.model == "example" and model.key == "synthetic-key"
+    model.configure(endpoint, "example", "", save=True)
+    assert not Model(store, protector).public()["has_key"]
+    store.close()
+
+
+def test_chunk_retries_timeout_with_the_same_prompt(model, monkeypatch):
+    prompts = []
+
+    def post(_url, **kwargs):
+        prompts.append(kwargs["json"]["input"])
+        if len(prompts) == 1:
+            raise httpx.ReadTimeout("internal details")
+        return httpx.Response(200, json=response_output({"summary": "synthetic"}))
+
+    monkeypatch.setattr("buaa_agent.learning.httpx.post", post)
+    progress = []
+    notes, _ = extract_chunk(model, "source", {"s0": {"text": "source"}}, progress.append)
+    assert notes.summary == "synthetic"
+    assert prompts == ["source", "source"]
+    assert progress == ["等待模型响应超时，正在自动重试 1/2"]
+
+
+@pytest.mark.parametrize(("status", "attempts"), [(401, 1), (429, 1), (503, 3)])
+def test_chunk_retries_temporary_service_errors_only(model, monkeypatch, status, attempts):
+    calls = []
+
+    def post(_url, **kwargs):
+        calls.append(kwargs)
+        return httpx.Response(status)
+
+    monkeypatch.setattr("buaa_agent.learning.httpx.post", post)
+    with pytest.raises(LearningError, match=f"HTTP {status}"):
+        extract_chunk(model, "source", {"s0": {"text": "source"}}, lambda _: None)
+    assert len(calls) == attempts

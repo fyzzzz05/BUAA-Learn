@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "buaalearn.coreinterop": {
+        "type": "Project"
+      },
+      "buaalearn.platform": {
+        "type": "Project",
+        "dependencies": {
+          "BUAALearn.CoreInterop": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}

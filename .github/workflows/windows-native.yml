@@ -1,0 +1,96 @@
+name: Native shared checks and Windows installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      verify_windows:
+        description: Build and smoke-test the Windows installer
+        type: boolean
+        default: false
+  pull_request:
+    paths: ['native/core/**', 'native/windows/**', 'frontend/**', 'native/macos-login/Package.swift', '.github/workflows/windows-native.yml']
+  push:
+    branches: [main]
+    paths: ['native/core/**', 'native/windows/**', 'frontend/**', '.github/workflows/windows-native.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  shared-checks:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Check and bundle local React workspace
+        working-directory: frontend
+        run: npm ci && npm run typecheck && npm run build:windows
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: native/windows/global.json
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.1
+      - name: Test Rust and C# shared services without compiling WinUI
+        run: sh native/windows/check-shared.sh
+      - name: Verify the macOS native consumer of the Rust ABI
+        run: swift test --package-path native/macos-login
+  windows-probe:
+    if: github.event_name == 'workflow_dispatch' && inputs.verify_windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: native/windows/global.json
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.1
+          targets: x86_64-pc-windows-msvc
+      - name: Build DLL, run interop checks, publish WinUI probe
+        shell: pwsh
+        run: ./native/windows/build.ps1 -Publish
+      - name: Test native window and WebView2 initialization (no school login)
+        shell: pwsh
+        run: ./native/windows/smoke.ps1 -Executable ./dist/native/windows/probe/BUAALearn.Probe.exe
+      - name: Test packaged React workspace and native message bridge
+        shell: pwsh
+        run: ./native/windows/smoke.ps1 -Workspace -Executable ./dist/native/windows/probe/BUAALearn.Probe.exe
+      - name: Verify the seeded offline course list
+        shell: pwsh
+        run: ./native/windows/startup-samples.ps1 -Executable ./dist/native/windows/probe/BUAALearn.Probe.exe -Samples 3 |
+          Set-Content ./dist/native/windows/startup-smoke.json -Encoding utf8
+      - name: Build and verify the per-user installer
+        shell: pwsh
+        run: |
+          choco install nsis --version=3.11 -y --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'NSIS installation failed.' }
+          $nsis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          ./native/windows/package.ps1 -MakeNsis $nsis -Version 0.1.1-smoke
+          ./native/windows/package.ps1 -MakeNsis $nsis
+          ./native/windows/setup-smoke.ps1 -Setup ./dist/native/windows/BUAA-Learn-Native-0.1.0-preview-win-x64-setup.exe -Upgrade ./dist/native/windows/BUAA-Learn-Native-0.1.1-smoke-win-x64-setup.exe |
+            Set-Content ./dist/native/windows/installer-smoke.json -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BUAA-Learn-Windows-Native-Test-x64
+          path: |
+            dist/native/windows/BUAA-Learn-Windows-Probe-x64.zip
+            dist/native/windows/package-metrics.json
+            dist/native/windows/BUAA-Learn-Native-0.1.0-preview-win-x64-setup.exe
+            dist/native/windows/installer-metrics.json
+            dist/native/windows/installer-smoke.json
+            dist/native/windows/startup-smoke.json
+            dist/native/windows/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

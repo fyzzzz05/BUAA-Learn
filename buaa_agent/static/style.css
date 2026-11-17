@@ -15,8 +15,8 @@
 .job-completed{background:#f2f7f3;color:#4b6c56;border-color:#e2ece5}
 
 /* Keep the task name prominent and centered independently of its details. */
-.job-item{display:grid;grid-template-columns:112px minmax(0,1fr) auto;align-items:center;column-gap:22px;min-height:64px}.job-item .job-name{font-size:15px;font-weight:600;line-height:1.5}.job-item .job-message{margin:0;line-height:1.8;overflow-wrap:anywhere}.job-status{display:flex;align-items:center;justify-content:flex-end;gap:8px;white-space:nowrap}
-@media(max-width:760px){.job-item{grid-template-columns:100px minmax(0,1fr);gap:6px 14px;padding:16px;min-height:72px}.job-item .job-name{font-size:14px;grid-row:1 / span 2}.job-item .job-message{grid-column:2}.job-status{grid-column:2;justify-content:flex-start}.job-status:empty{display:none}}
+.job-item{display:grid;grid-template-columns:112px minmax(0,1fr) 5.5em 7.5em;align-items:center;column-gap:22px;min-height:64px}.job-item .job-name{font-size:15px;font-weight:600;line-height:1.5}.job-item .job-message{margin:0;line-height:1.8;overflow-wrap:anywhere}.job-status,.job-action{display:flex;align-items:center;justify-content:flex-start;white-space:nowrap}
+@media(max-width:760px){.job-item{grid-template-columns:100px 5.5em minmax(0,1fr);gap:6px 14px;padding:16px;min-height:72px}.job-item .job-name{font-size:14px;grid-row:1 / span 2}.job-item .job-message{grid-column:2 / -1}.job-status{grid-column:2}.job-action{grid-column:3}.job-action:empty{visibility:hidden}}
 
 /* A single, legible school sign-in control in the header. */
 #connection>button{font-size:14px;font-weight:500;min-height:38px;padding:7px 13px;gap:8px;color:#333;border:1px solid #e4e4e4;background:#fff;border-radius:7px}#connection>button .ui-icon{width:17px;height:17px}#connection>button:hover{background:#f7f7f7;border-color:#ccc}#connection>button:disabled{color:#767676}@media(max-width:760px){#connection>button{font-size:13px;min-height:40px;padding:7px 11px}}
@@ -31,3 +31,31 @@
 @media(max-width:1100px){.lesson-action-grid{grid-template-columns:1fr}.lesson-action-column+.lesson-action-column{border-left:0;border-top:1px solid var(--line)}.lesson-action-body{max-height:300px}}
 
 .schedule-course-link{display:block;color:inherit;cursor:pointer;border-radius:0 6px 6px 0;transition:background-color .15s}.schedule-course-link:hover{background:#f3f6f8;border-left-color:#7895ab}.schedule-course-link:focus-visible{outline:2px solid #7895ab;outline-offset:3px}
+
+.lesson-overview .overview-heading h2{margin:0 0 5px}
+.lesson-overview .lesson-heading{padding:24px}
+.lesson-primary{flex:none}
+.lesson-primary>.button.primary:hover{background:#254966;border-color:#254966}
+.lesson-primary>.button.primary{background:#315f85;border-color:#315f85}
+.lesson-availability{margin-top:16px;color:#576875;font-size:13px}
+.lesson-overview .overview-tools{padding-top:16px;border-top:1px solid #e6edf3}
+@media(max-width:600px){.lesson-overview .overview-heading{flex-wrap:wrap}.lesson-overview .lesson-heading{padding:18px}}
+
+.lesson-findings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding:20px 24px 24px;border-top:1px solid #e6edf3}
+.lesson-findings h3{color:#253543;font-size:15px;margin-bottom:10px}
+.lesson-findings ul{list-style:none;margin:0;padding:0}
+.lesson-findings li{padding:10px 0;overflow-wrap:anywhere}
+.lesson-findings li+li{border-top:1px solid #e6edf3}
+.lesson-finding-meta{display:flex;flex-wrap:wrap;align-items:center;gap:7px;color:#576875;font-size:12px}
+.lesson-finding-meta:empty{display:none}
+@media(max-width:900px){.lesson-findings{grid-template-columns:1fr;gap:18px}}
+@media(max-width:600px){.lesson-findings{padding:18px}}
+
+#source-video:empty{display:none}
+#source-video video{display:block;width:100%;max-height:40vh;margin:0 auto 18px;background:#17232e;border-radius:8px}
+.transcript-range .actions{justify-content:flex-end}
+@media(max-width:600px){.transcript-range{flex-wrap:wrap;gap:8px}.transcript-range .actions{justify-content:flex-start}}
+
+.lesson-finding-meta:has(.lesson-source-pill){margin-top:6px}
+.lesson-source-pill button{border-radius:999px;background:#edf3f8;border-color:#d9e5ef;color:#244865;padding-inline:12px}
+.lesson-source-pill button:hover{background:#e0edf7;border-color:#b8cee0}

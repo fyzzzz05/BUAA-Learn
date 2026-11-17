@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <NativeCoreFile Condition="'$(NativeCoreFile)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(MSBuildThisFileDirectory)../../core/target/release/libbuaa_core.dylib</NativeCoreFile>
+    <NativeCoreFile Condition="'$(NativeCoreFile)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">$(MSBuildThisFileDirectory)../../core/target/release/libbuaa_core.so</NativeCoreFile>
+    <NativeCoreFile Condition="'$(NativeCoreFile)' == ''">$(MSBuildThisFileDirectory)../../core/target/x86_64-pc-windows-msvc/release/buaa_core.dll</NativeCoreFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../BUAALearn.Platform/BUAALearn.Platform.csproj" />
+    <Content Include="$(NativeCoreFile)" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Fixtures/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CheckNativeCore" BeforeTargets="Build">
+    <Error Condition="!Exists('$(NativeCoreFile)')" Text="Build native/core in Release first (Windows: --target x86_64-pc-windows-msvc)." />
+  </Target>
+</Project>

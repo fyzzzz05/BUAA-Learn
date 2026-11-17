@@ -55,6 +55,12 @@ On restart, previously queued/running jobs are marked interrupted rather than re
 - Add system-managed service startup and explicit notification channels.
 - Export course materials into DeepTutor rather than couple ingestion to its entire runtime.
 
+## 开发待办：课堂分析逐段显示进度和笔记
+
+- [ ] 每段通过校验后保存草稿，阅读器随进度追加已完成的课堂时间轴。进度按实际分段数显示，例如「4/16 已完成 · 第 5 段重试中」。
+- [ ] 分析失败时保留已完成草稿。课堂原文快照和模型配置一致时，从失败段继续。
+- [ ] 全部分段完成后显示「整理整课」，完成跨段主题合并后再发布正式笔记。保留原有的引用校验。
+
 ## References
 
 - [FastAPI](https://fastapi.tiangolo.com/)

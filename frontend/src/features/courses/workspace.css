@@ -1,0 +1,48 @@
+/* Match Arc actions to the timetable's blue and the existing desktop navigation. */
+#course-workspace {
+  --accent: #315f85;
+  --accent-strong: #254966;
+  --accent-subtle: #eaf2f8;
+  --focus-outline: #4f7ea2;
+  --font-sans: Geist, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+#course-workspace .timetable {padding: 0; max-width: none}
+#course-workspace .tt-heading h1,
+.arc-courses h1 {font: 650 clamp(23px, 2.7vw, 31px)/1.25 Geist, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: -.035em}
+#course-workspace .tt-heading p,
+.courses-heading p {color: #576875; margin-top: 6px; font-size: 13px}
+#course-workspace .tt-scroll {max-height: max(360px, calc(100dvh - 248px)); min-height: 340px}
+#course-workspace .tt-course:hover {background: color-mix(in srgb,var(--course-color) 16%,white)}
+#course-workspace .tt-board {min-width: 660px}
+#course-workspace .is-full-week .tt-board {min-width: 900px}
+#course-workspace .tt-heading-actions > button {white-space: nowrap}
+#course-workspace .tt-view button {white-space: nowrap}
+#course-workspace .tt-empty {text-align: center; padding-inline: 12px}
+.tt-detail[data-slot=sheet-content] {position: fixed; z-index: 51; display: flex; flex-direction: column; overflow: auto}
+body:has(.tt-detail) [data-slot=sheet-overlay] {position: fixed; inset: 0; z-index: 50}
+.tt-detail-body > button {color: #fff; background: #315f85}
+.tt-detail-body > button:hover {background: #254966}
+.tt-detail svg, #course-workspace button svg {width: 16px; height: 16px; flex-shrink: 0}
+.arc-courses {max-width: 1200px; margin-inline: auto}
+.courses-heading {display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px}
+.courses-heading button {white-space: nowrap}
+.courses-filter {display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 12px 0 18px}
+.courses-filter > div {width: min(100%, 320px)}
+.courses-filter > span {color: #576875; white-space: nowrap; padding-bottom: 8px}
+.courses-grid {display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%, 240px),1fr)); gap: 14px; list-style: none; margin: 0; padding: 0}
+.courses-grid li {min-width: 0}
+.course-card {display: flex; flex-direction: column; height: 100%; min-height: 164px; gap: 6px; padding: 17px 18px; border: 1px solid #dfe7ee; border-radius: 12px; background: #fff; color: #253543}
+.course-card:hover {border-color: #8fadc5; background: #f9fbfd}
+.course-card-top, .course-card-meta {display: flex; align-items: center; justify-content: space-between; gap: 8px}
+.course-card-icon {display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #edf3f8; color: #315f85}
+.course-card-icon svg, .course-card-arrow {width: 16px; height: 16px}
+.course-card-arrow {color: #657c8f}
+.course-card h2 {font-size: 15px; font-weight: 650; overflow-wrap: anywhere}
+.course-card p {font-size: 12px; color: #576875; overflow-wrap: anywhere}
+.course-card-meta {margin-top: auto; padding-top: 9px; color: #576875; font-size: 11px; flex-wrap: wrap}
+.courses-empty {border: 1px solid #dfe7ee; border-radius: 12px; background: #fff}
+.courses-empty button {justify-self: center}
+@media (max-width: 600px) {
+  .courses-heading {align-items: flex-start; flex-wrap: wrap}
+  #course-workspace .tt-week-nav {width: 100%}
+}

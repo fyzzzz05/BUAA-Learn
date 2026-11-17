@@ -17,6 +17,13 @@ Visual composition is adapted from the [official DeepTutor overview screenshot](
 
 Image decoding and comparison use [Pillow](https://python-pillow.github.io/) (MIT-CMU); PDF generation uses [ReportLab](https://www.reportlab.com/) (BSD). Both are ordinary Python runtime dependencies.
 
+The Windows shared Rust core validates original PNG, JPEG and WebP slide images
+with `image` 0.25.10 (MIT OR Apache-2.0), with default features disabled and only
+the `png`, `jpeg` and `webp` codecs enabled. Resolved transitive crate versions
+remain locked in `native/core/Cargo.lock`. Windows test-package publication
+collects the crates' original license/notice texts and a manifest into `licenses/`
+using `frontend/collect-native-licenses.mjs`; missing notices stop that step.
+
 ## Frontend components
 
 The vendored shadcn/ui Base UI components are MIT licensed; see
@@ -33,3 +40,10 @@ does not replace rights in the classroom content depicted in those screenshots.
 ## 桌面运行环境
 
 桌面安装包包含 Electron（MIT）及其 Chromium、Node.js 等组件；Electron 自带的 LICENSE 与 LICENSES.chromium.html 随应用分发。登录使用 Playwright（Apache-2.0）及其 Chromium / Chrome for Testing 浏览器，浏览器许可证和 notices 保留于随附浏览器目录中。Python 运行环境保留 PSF 许可证；PyInstaller 的 GPL 许可证包含允许分发冻结应用的 bootloader 例外，详见 https://pyinstaller.org/en/stable/license.html。安装包不改变本项目 MIT 许可证。
+
+
+Windows 原生版随包保留已解析 NuGet 运行时的许可证及声明。Windows 原生安装器由 [NSIS](https://nsis.sourceforge.io/License) 生成，安装内容包含所用 NSIS 发行版的 `COPYING`。课件 PDF 的无损压缩使用 `flate2`，版本及许可证收录在 Rust 构建清单中。
+
+## Arc UI
+
+The course workspace uses MIT-licensed [Arc UI components](https://github.com/kuratlielia/arc-library), copyright (c) 2026 Elia Kuratli. The [license](buaa_agent/static/LICENSE-UIArc.txt) is bundled with the frontend.

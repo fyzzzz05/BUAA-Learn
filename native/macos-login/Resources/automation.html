@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:;">
+<link rel="stylesheet" href="automations.css">
+<style>html{height:100%;overflow-y:auto}body{margin:0;min-height:100%;background:#fff;color:#28343d;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}*{box-sizing:border-box}button,input{font:inherit}h2,p{margin:0}.automation-rows{padding-bottom:0}</style>
+</head>
+<body><main id="root"></main>
+<script src="automation-bundle.js"></script>
+<script>
+let handle;
+const pending = new Map();
+let requestID = 0;
+window.resolveAutomationSave = (id, result) => { const resolve = pending.get(id); if (resolve) { pending.delete(id); resolve(result); } };
+window.renderAutomation = props => {
+  handle?.unmount();
+  handle = BuaaAutomation.mountAutomations(document.getElementById('root'), {
+    ...props,
+    onDraft: draft => window.webkit.messageHandlers.automationDraft.postMessage(draft),
+    onSave: changes => new Promise(resolve => {
+      const id = ++requestID; pending.set(id, resolve);
+      window.webkit.messageHandlers.automationSave.postMessage({id, owner:props.owner, changes});
+    })
+  });
+};
+window.webkit.messageHandlers.automationReady.postMessage(true);
+</script>
+</body></html>

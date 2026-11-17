@@ -1,0 +1,2 @@
+Generated using imagegen for BUAA Learn landing hero, 2026-11-16.
+Dark midnight navy atmospheric texture, restrained cobalt volumetric haze across the lower right and far edges, matte fine grain. Upper left and center kept dark for heading and real-time cursor light. No text, UI, particles, objects, sharp beams or white highlights.

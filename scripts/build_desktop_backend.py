@@ -31,9 +31,19 @@ import playwright  # noqa: E402
 
 browser_source = Path(playwright.__file__).parent / "driver/package/.local-browsers"
 browser_target = ROOT / "dist/backend/buaa-backend/_internal/playwright/driver/package/.local-browsers"
+from playwright.sync_api import sync_playwright  # noqa: E402
+
+with sync_playwright() as pw:
+    executable = Path(pw.chromium.executable_path)
+browser_dir = next((parent for parent in executable.parents if parent.parent == browser_source), None)
+if browser_dir is None or not executable.is_file():
+    raise RuntimeError("Installed Chromium executable was not found in the Playwright browser directory")
 if browser_target.exists():
     shutil.rmtree(browser_target)
-shutil.copytree(browser_source, browser_target, symlinks=True,
+browser_target.mkdir(parents=True)
+# Login only uses Chromium. Do not distribute ffmpeg or stale browser revisions
+# from a reused build environment; Playwright does not need them for login.
+shutil.copytree(browser_dir, browser_target / browser_dir.name, symlinks=True,
                 ignore=shutil.ignore_patterns(".links", "__pycache__"))
 licenses = ROOT / "dist/backend/buaa-backend/licenses"
 licenses.mkdir(exist_ok=True)

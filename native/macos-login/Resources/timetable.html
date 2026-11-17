@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:;"><title>BUAA Learn 课程表</title><link rel="stylesheet" href="timetable.css"></head>
+<body><main id="root"></main><script src="timetable-bundle.js"></script><script>
+let handle;
+const post=(action,value)=>window.webkit.messageHandlers.timetableAction.postMessage({action,value,workspace:window.timetableWorkspace});
+window.renderTimetable=props=>{
+ window.timetableWorkspace=props.workspace;
+ const callbacks={onWeek:week=>post('week',week),onView:value=>post('view',value),onSync:()=>post('sync',null),onOpen:(id,date)=>post('open',{id,date})};
+ const next={...props,...callbacks};
+ if(handle)handle.update(next);else handle=BuaaTimetable.mountTimetable(document.getElementById('root'),next);
+};
+window.webkit.messageHandlers.timetableReady.postMessage(true);
+</script></body></html>

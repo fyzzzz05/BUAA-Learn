@@ -1,0 +1,20 @@
+.desktop-settings-section {margin-top: 18px}
+.desktop-settings-body, .desktop-update-release {display: grid; gap: 12px}
+.desktop-settings-body button svg {width: 15px; height: 15px; flex: none}
+.desktop-update-status {color: #576875; font-size: 12px}
+.desktop-update-status:empty {display: none}
+.desktop-update-release {justify-items: start; padding-top: 12px; border-top: 1px solid #e6edf3}
+.desktop-update-notes {
+  width: 100%;
+  max-height: 220px;
+  overflow: auto;
+  padding: 12px 14px;
+  border: 1px solid #e6edf3;
+  border-radius: 8px;
+  background: #fbfcfe;
+  color: #334858;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.desktop-update-progress {display: flex; align-items: center; gap: 10px; width: 100%; font-variant-numeric: tabular-nums}
+.desktop-update-progress progress {width: 100%; accent-color: #315f85}

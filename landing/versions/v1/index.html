@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BUAA Learn 帮北航同学快速回顾课堂内容，按时间轴定位知识点，补看错过的课和作业。">
+  <meta name="theme-color" content="#f4f5ef">
+  <title>BUAA Learn｜你的课后学习助手</title>
+  <link rel="stylesheet" href="style.css?v=sample-lesson">
+  <script type="module" src="demo.js?v=sample-lesson"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell nav">
+      <a class="brand" href="./">BUAA Learn</a>
+      <nav aria-label="主导航"><a href="#demo">课堂演示</a><a href="#workflow">复习场景</a></nav>
+      <a class="nav-download" href="#download">下载桌面版 <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main>
+    <section class="hero shell" aria-labelledby="title">
+      <div class="hero-copy">
+      <p class="eyebrow">BUAA Learn / 课堂自动化助手</p>
+      <h1 id="title">下课之后，<br>重点都在。</h1>
+      <p class="intro">快速看懂这节课讲了什么。想重听某个知识点，就从老师讲到的那一分钟开始。</p>
+      <div class="actions"><a class="button primary" href="#download">下载桌面版 <span aria-hidden="true">↗</span></a><a class="button secondary" href="#demo">试一节示例课 <span aria-hidden="true">↗</span></a></div>
+      </div>
+      <section id="demo" class="demo" aria-label="示例课堂工作台">
+        <div class="window-bar"><span>示例课堂</span><span class="sample">第 4 讲 · 图像理解与多模态</span></div>
+        <div class="window-body">
+          <div class="workspace">
+            <div class="workspace-head"><h2>计算机视觉导论</h2><span class="ready"><i></i>笔记已生成</span></div>
+            <div class="tabs" aria-label="课堂材料">
+              <button type="button" aria-pressed="true" data-view="notes">时间轴笔记</button>
+              <button type="button" aria-pressed="false" data-view="tasks">作业与事项</button>
+              <button type="button" aria-pressed="false" data-view="source">课堂原话</button>
+            </div>
+            <div id="demo-content" class="demo-content" aria-live="polite">
+              <button type="button" class="entry" data-source="0"><time>00:07:34</time><span><strong>分类、检测与分割</strong><small>对比整图分类、像素分割和目标检测。</small></span><span class="jump" aria-hidden="true">↗</span></button>
+              <button type="button" class="entry" data-source="1"><time>00:12:56</time><span><strong>多模态如何理解图像</strong><small>用图文检索理解图像与语言如何对齐。</small></span><span class="jump" aria-hidden="true">↗</span></button>
+              <button type="button" class="entry" data-source="2"><time>00:14:15</time><span><strong>视觉 Transformer</strong><small>把图像切成小块，用注意力学习它们之间的关系。</small></span><span class="jump" aria-hidden="true">↗</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+    <section id="workflow" class="shell workflow">
+      <div class="gallery-head">
+        <h2 id="case-title">打开一节课，你想找什么？</h2>
+        <div class="gallery-controls" hidden>
+          <button type="button" data-case-step="-1" aria-label="上一个案例" aria-controls="case-track">←</button>
+          <button type="button" data-case-step="1" aria-label="下一个案例" aria-controls="case-track">→</button>
+        </div>
+      </div>
+      <div id="case-track" class="case-track" role="region" aria-labelledby="case-title" tabindex="0">
+        <article id="review-demo" class="case">
+          <h3>这节课讲了什么？</h3>
+          <p>从时间轴扫一眼，按课堂顺序回顾主题和知识点。</p>
+          <div class="motion-demo">
+            <div class="motion-stage">
+              <div class="motion-window">
+                <p class="motion-course">计算机视觉导论 · 示例课堂</p>
+                <div class="motion-notes">
+                  <h4>第 4 讲 · 图像理解与多模态</h4>
+                  <div class="motion-row motion-topic"><strong>笔记已生成</strong><span class="motion-target">继续阅读</span></div>
+                </div>
+                <div class="motion-source" hidden>
+                  <h4>课堂时间轴</h4>
+                  <div class="motion-row"><time>00:07:34</time><strong>分类、检测与分割</strong></div>
+                  <div class="motion-row"><time>00:12:56</time><strong>多模态如何理解图像</strong></div>
+                  <div class="motion-row"><time>00:14:15</time><strong>视觉 Transformer</strong></div>
+                </div>
+              </div>
+              <span class="motion-cursor" aria-hidden="true" hidden></span>
+              <span class="motion-ring" aria-hidden="true" hidden></span>
+            </div>
+            <div class="motion-controls">
+              <button type="button" class="quote-button motion-play" hidden>播放演示</button>
+            </div>
+          </div>
+        </article>
+        <article id="knowledge-demo" class="case">
+          <h3>老师在哪一段讲的？</h3>
+          <p>从时间轴点开 00:12:56，回到老师讲多模态的位置。</p>
+          <div class="motion-demo">
+            <div class="motion-stage">
+              <div class="motion-window">
+                <p class="motion-course">计算机视觉导论 · 示例课堂</p>
+                <div class="motion-notes">
+                  <h4>课堂时间轴</h4>
+                  <div class="motion-row"><time>00:07:34</time><strong>分类、检测与分割</strong></div>
+                  <div class="motion-row motion-topic"><time>00:12:56</time><strong>多模态如何理解图像</strong><span class="motion-target">查看原话</span></div>
+                  <div class="motion-row"><time>00:14:15</time><strong>视觉 Transformer</strong></div>
+                </div>
+                <div class="motion-source" hidden>
+                  <h4>课堂原话</h4>
+                  <time>00:12:56</time>
+                  <blockquote>图像和文字提供不同的信息。做图文检索时，模型把两者映射到同一个空间，让含义相近的图像和描述彼此靠近。</blockquote>
+                </div>
+              </div>
+              <span class="motion-cursor" aria-hidden="true" hidden></span>
+              <span class="motion-ring" aria-hidden="true" hidden></span>
+            </div>
+            <div class="motion-controls">
+              <button type="button" class="quote-button motion-play" hidden>播放演示</button>
+            </div>
+          </div>
+        </article>
+        <article id="homework-demo" class="case">
+          <h3>没去上课，漏了什么？</h3>
+          <p>补看老师布置的作业和提到的重要事项。</p>
+          <div class="motion-demo">
+            <div class="motion-stage">
+              <div class="motion-window">
+                <p class="motion-course">计算机视觉导论 · 示例课堂</p>
+                <div class="motion-notes">
+                  <h4>第 4 讲 · 图像理解与多模态</h4>
+                  <div class="motion-row motion-topic"><strong>课程目录</strong><span class="motion-target">查看课次</span></div>
+                </div>
+                <div class="motion-source" hidden>
+                  <div class="motion-findings">
+                    <div><h4>本节作业</h4><p>选取三组图文样本，对比检索结果，并解释一个匹配错误。</p></div>
+                    <div><h4>重要事项</h4><p>下节课会讨论检索失败的案例，请带一个例子来。</p></div>
+                  </div>
+                </div>
+              </div>
+              <span class="motion-cursor" aria-hidden="true" hidden></span>
+              <span class="motion-ring" aria-hidden="true" hidden></span>
+            </div>
+            <div class="motion-controls">
+              <button type="button" class="quote-button motion-play" hidden>播放演示</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section id="download" class="shell download">
+      <div><h2>下载 BUAA Learn</h2><p>桌面测试版 0.2.4</p></div>
+      <ul>
+        <li><a href="https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-mac-arm64.dmg">macOS · Apple Silicon <span aria-hidden="true">↓</span></a></li>
+        <li><a href="https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-mac-x64.dmg">macOS · Intel <span aria-hidden="true">↓</span></a></li>
+        <li><a href="https://github.com/fyzzzz05/BUAA-Learn/releases/download/desktop-v0.2.4/BUAA-Learn-0.2.4-win-x64.exe">Windows · x64 <span aria-hidden="true">↓</span></a></li>
+      </ul>
+      <p class="detail">用北航 SSO 登录。开启课程自动化后，应用会在运行时检查新回放。生成笔记时，课堂文本会发送到你配置的模型服务，并可能产生调用费用。</p>
+    </section>
+  </main>
+  <footer class="shell footer"><span>BUAA Learn · 非北航官方应用</span><a href="https://github.com/fyzzzz05/BUAA-Learn">GitHub ↗</a></footer>
+</body>
+</html>

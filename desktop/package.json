@@ -1,7 +1,7 @@
 {
   "name": "buaa-learn-desktop",
   "productName": "BUAA Learn",
-  "version": "0.2.0",
+  "version": "0.2.4",
   "description": "BUAA Learn 课程学习助手",
   "author": "fyzzzz05",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "appId": "io.github.fyzzzz05.buaa-learn",
     "productName": "BUAA Learn",
     "directories": { "output": "../dist/desktop", "buildResources": "assets" },
-    "files": ["main.cjs", "navigation.cjs", "package.json", "LICENSE", "THIRD_PARTY_NOTICES.md"],
+    "files": ["main.cjs", "navigation.cjs", "settings-preload.cjs", "settings.cjs", "updates.cjs", "package.json", "LICENSE", "THIRD_PARTY_NOTICES.md"],
     "extraResources": [{ "from": "../dist/backend/buaa-backend", "to": "backend", "filter": ["**/*"] }],
     "asar": true,
     "mac": {

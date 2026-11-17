@@ -59,7 +59,7 @@ function FindingRows({rows, evidence}: {rows: Finding[], evidence: Record<string
       start: refs[0].start, end: Math.max(...refs.map(ref => ref.end)),
     } : undefined)
     return <li key={index}><p>{row.text}</p>{row.deadline !== undefined &&
-      <p className="lesson-assignment-meta">待核验 · 截止：{row.deadline} · 对象：{row.audience}<br />提交：{row.submission}</p>}
+      <p className="lesson-assignment-meta">截止：{row.deadline} · 对象：{row.audience}<br />提交：{row.submission}</p>}
       {range && <SourceButton range={range} />}
     </li>
   })}</ul>

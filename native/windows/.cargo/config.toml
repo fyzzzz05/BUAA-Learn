@@ -1,0 +1,3 @@
+[target.x86_64-pc-windows-msvc]
+# Do not require a separately installed VC runtime for the Rust/SQLite DLL.
+rustflags = ["-C", "target-feature=+crt-static"]

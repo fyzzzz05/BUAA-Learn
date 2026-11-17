@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "notice_indices": {
+      "items": {
+        "type": "integer"
+      },
+      "type": "array"
+    },
+    "review_suggestions": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "type": "object",
+  "required": [
+    "notice_indices",
+    "review_suggestions"
+  ]
+}

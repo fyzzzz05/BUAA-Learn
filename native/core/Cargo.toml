@@ -1,0 +1,18 @@
+[package]
+name = "buaa-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+rusqlite = { version = "0.37", features = ["bundled", "backup"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }
+sha2 = "0.10"
+image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
+flate2 = "1"

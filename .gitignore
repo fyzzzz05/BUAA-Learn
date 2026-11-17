@@ -17,6 +17,12 @@ frontend/node_modules/
 !.env.example
 build/
 node_modules/
+native/macos-login/.build/
+native/core/target/
+native/windows/**/bin/
+native/windows/**/obj/
+native/windows/.vs/
+native/windows/BUAALearn.App/Workspace/
 *.sqlite*
 *.db
 *.pdf
